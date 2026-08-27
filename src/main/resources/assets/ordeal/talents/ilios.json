@@ -1,0 +1,38 @@
+{
+  "id": "ilios",
+  "name": "ILIOS THE PHOENIX FLAME",
+  "short": "ILIOS",
+  "desc": "The user enters 'Ilios State'. Called the sun fire talent, this is one of the original great 4 talents.",
+  "accent": "F2A63C",
+  "types": [
+    "ELEMENTAL",
+    "STATE"
+  ],
+  "abilities": [
+    {
+      "id": "phoenix_spear",
+      "icon": "PS",
+      "name": "Phoenix Spear",
+      "kind": "MOVEMENT \u00b7 CHARGE",
+      "desc": "Propel yourself with flames towards the enemy at full speed. Upon connecting with your target, they are struck with immense force and are usually sent flying & burning.",
+      "talentStrReq": 0,
+      "levelNeeded": 0,
+      "chiCost": 12,
+      "cooldownTicks": 100,
+      "baseDmg": 6,
+      "extraDmg": 0.4,
+      "hold": {
+        "mode": "charge",
+        "fireOnPress": false,
+        "levels": 5,
+        "secondsPerLevel": 0.5,
+        "chiPerTick": 0.5,
+        "chiControlMax": 0.7,
+        "power": {
+          "min": 1.0,
+          "max": 2.2
+        }
+      }
+    }
+  ]
+}

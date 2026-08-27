@@ -1,0 +1,12 @@
+{
+  "_fv": 85,
+  "_type": "keybind",
+  "definition": {
+    "triggerKey": "0",
+    "keyBindingName": "Kode Field Terminal",
+    "keyBindingCategoryKey": "ordeal",
+    "onKeyPressed": {
+      "name": "OpenCodeFieldTerminal"
+    }
+  }
+}

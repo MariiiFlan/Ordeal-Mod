@@ -1,0 +1,11 @@
+{
+  "gaurd_break": {
+    "subtitle": "subtitles.gaurd_break",
+    "sounds": [
+      {
+        "name": "ordeal:gaurd_break",
+        "stream": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,1937 @@
+{
+  "mod_elements": [
+    {
+      "name": "KodeFieldTerminal",
+      "type": "keybind",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "kode_field_terminal",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/network/KodeFieldTerminalMessage.java"
+        ]
+      },
+      "path": "~/Keys"
+    },
+    {
+      "name": "KodeFieldTerminalGUI",
+      "type": "gui",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "kode_field_terminal_gui",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/world/inventory/KodeFieldTerminalGUIMenu.java",
+          "src/main/java/net/mcreator/ordeal/client/gui/KodeFieldTerminalGUIScreen.java"
+        ]
+      },
+      "path": "~/GUI"
+    },
+    {
+      "name": "OpenCodeFieldTerminal",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "open_code_field_terminal",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/OpenCodeFieldTerminalProcedure.java"
+        ]
+      },
+      "path": "~/GUI/GUI Procedures"
+    },
+    {
+      "name": "OrdealTerminalPainter",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_terminal_painter",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealTerminalPainter.java"
+        ]
+      },
+      "path": "~/GUI/Elements"
+    },
+    {
+      "name": "OrdealDraw",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_draw",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealDraw.java"
+        ]
+      },
+      "path": "~/GUI/Elements"
+    },
+    {
+      "name": "OrdealTalents",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_talents",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealTalents.java"
+        ]
+      },
+      "path": "~/GUI/Elements"
+    },
+    {
+      "name": "OrdealCommands",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_commands",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealCommands.java"
+        ]
+      },
+      "path": "~/Commands"
+    },
+    {
+      "name": "OrdealActionMessage",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_action_message",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealActionMessage.java"
+        ]
+      },
+      "path": "~/GUI/Elements"
+    },
+    {
+      "name": "CombateModeOnOff",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "combate_mode_on_off",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/CombateModeOnOffProcedure.java"
+        ]
+      },
+      "path": "~/Keys/procedures"
+    },
+    {
+      "name": "AbilityRowSwap",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ability_row_swap",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/AbilityRowSwapProcedure.java"
+        ]
+      },
+      "path": "~/Keys/procedures"
+    },
+    {
+      "name": "AbilityCall",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ability_call",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/AbilityCallProcedure.java"
+        ]
+      },
+      "path": "~/Keys/procedures"
+    },
+    {
+      "name": "GetAbilityPressed",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "get_ability_pressed",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "string",
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/GetAbilityPressedProcedure.java"
+        ]
+      },
+      "path": "~/Keys/procedures"
+    },
+    {
+      "name": "PhoenixSpear0",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "phoenix_spear_0",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/PhoenixSpear0Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Phoenix Spear"
+    },
+    {
+      "name": "Cd1",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cd_1",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/Cd1MobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "Cd2",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cd_2",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/Cd2MobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "Cd3",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cd_3",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/Cd3MobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "Cd4",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cd_4",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/Cd4MobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "Cd5",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cd_5",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/Cd5MobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "Cd6",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cd_6",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/Cd6MobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "Cd7",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cd_7",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/Cd7MobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "Cd8",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cd_8",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/Cd8MobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "Cd9",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cd_9",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/Cd9MobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "Cd10",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "cd_10",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/Cd10MobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "Stunned",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "stunned",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/StunnedMobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "UpDash",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "up_dash",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/UpDashMobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "DashEffectTicks",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "dash_effect_ticks",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/DashEffectTicksProcedure.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "DownDash",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "down_dash",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/DownDashMobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "ForwardDash",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "forward_dash",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/ForwardDashMobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "ForwardDashNoAirTime",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "forward_dash_no_air_time",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/ForwardDashNoAirTimeMobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "CombatMode",
+      "type": "keybind",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "combat_mode",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/network/CombatModeMessage.java"
+        ]
+      },
+      "path": "~/Keys"
+    },
+    {
+      "name": "Ability1",
+      "type": "keybind",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ability_1",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/network/Ability1Message.java"
+        ]
+      },
+      "path": "~/Keys"
+    },
+    {
+      "name": "Ability2",
+      "type": "keybind",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ability_2",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/network/Ability2Message.java"
+        ]
+      },
+      "path": "~/Keys"
+    },
+    {
+      "name": "Ability3",
+      "type": "keybind",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ability_3",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/network/Ability3Message.java"
+        ]
+      },
+      "path": "~/Keys"
+    },
+    {
+      "name": "Ability4",
+      "type": "keybind",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ability_4",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/network/Ability4Message.java"
+        ]
+      },
+      "path": "~/Keys"
+    },
+    {
+      "name": "Ability5",
+      "type": "keybind",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ability_5",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/network/Ability5Message.java"
+        ]
+      },
+      "path": "~/Keys"
+    },
+    {
+      "name": "OrdealInputPayload",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_input_payload",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealInputPayload.java"
+        ]
+      },
+      "path": "~/Elements"
+    },
+    {
+      "name": "OrdealInput",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_input",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealInput.java"
+        ]
+      },
+      "path": "~/Elements"
+    },
+    {
+      "name": "OrdealInputSync",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_input_sync",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealInputSync.java"
+        ]
+      },
+      "path": "~/Elements"
+    },
+    {
+      "name": "Talent",
+      "type": "damagetype",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "talent",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/ordeal/damage_type/talent.json"
+        ]
+      },
+      "path": "~/Types"
+    },
+    {
+      "name": "ScreenShake",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "screen_shake",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/ScreenShakeMobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "ScreenShakeAdd",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "screen_shake_add",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/ScreenShakeAddProcedure.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "CameraShake",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "camera_shake",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/CameraShake.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "AttackPower",
+      "type": "damagetype",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "attack_power",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/ordeal/damage_type/attack_power.json"
+        ]
+      },
+      "path": "~/Types"
+    },
+    {
+      "name": "PhoenixSpearOnTick",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "phoenix_spear_on_tick",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/PhoenixSpearOnTickProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Phoenix Spear"
+    },
+    {
+      "name": "PhoenixSpear",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "phoenix_spear",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/PhoenixSpearMobEffect.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Phoenix Spear"
+    },
+    {
+      "name": "OrdealAnimData",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_anim_data",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealAnimData.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealAnimStore",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_anim_store",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealAnimStore.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealHud",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_hud",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealHud.java"
+        ]
+      },
+      "path": "~/GUI"
+    },
+    {
+      "name": "OrdealCombat",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_combat",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealCombat.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "OrdealStats",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_stats",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealStats.java"
+        ]
+      },
+      "path": "~/Combat/Stats"
+    },
+    {
+      "name": "OrdealFxPayload",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_fx_payload",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealFxPayload.java"
+        ]
+      },
+      "path": "~/VFX"
+    },
+    {
+      "name": "OrdealFx",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_fx",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealFx.java"
+        ]
+      },
+      "path": "~/VFX"
+    },
+    {
+      "name": "OrdealChiCharge",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_chi_charge",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealChiCharge.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "OrdealTalentFlow",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_talent_flow",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealTalentFlow.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "OrdealExtraction",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_extraction",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealExtraction.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "OrdealXp",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_xp",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealXp.java"
+        ]
+      },
+      "path": "~/Combat/Stats"
+    },
+    {
+      "name": "OrdealAnimatorScreen",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_animator_screen",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealAnimatorScreen.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealAnimatorClient",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_animator_client",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealAnimatorClient.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealAnimatorCommand",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_animator_command",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealAnimatorCommand.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "AbilityRowSwapKey",
+      "type": "keybind",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ability_row_swap_key",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/network/AbilityRowSwapKeyMessage.java"
+        ]
+      },
+      "path": "~/Keys"
+    },
+    {
+      "name": "CustomPacketPayload",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "custom_packet_payload",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/CustomPacketPayload.java"
+        ]
+      }
+    },
+    {
+      "name": "OrdealAnim",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_anim",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealAnim.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealAnimPlayback",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_anim_playback",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealAnimPlayback.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealAnimRender",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_anim_render",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealAnimRender.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealVfxPayload",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_vfx_payload",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealVfxPayload.java"
+        ]
+      },
+      "path": "~/VFX"
+    },
+    {
+      "name": "OrdealVfx",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_vfx",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealVfx.java"
+        ]
+      },
+      "path": "~/VFX"
+    },
+    {
+      "name": "OrdealSilhouette",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_silhouette",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealSilhouette.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "OrdealChiColor",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_chi_color",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealChiColor.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "OrdealCombo",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_combo",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealCombo.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "OrdealMobStats",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_mob_stats",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealMobStats.java"
+        ]
+      },
+      "path": "~/Combat/Stats"
+    },
+    {
+      "name": "PlayerRespawn",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "player_respawn",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/PlayerRespawnProcedure.java"
+        ]
+      }
+    },
+    {
+      "name": "OrdealHeavy",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_heavy",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealHeavy.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "OrdealTuning",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_tuning",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealTuning.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealDash",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_dash",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealDash.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "OrdealOrbitCam",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_orbit_cam",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealOrbitCam.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealBlockbench",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_blockbench",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealBlockbench.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealAnimNoise",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_anim_noise",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealAnimNoise.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealAnimLean",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_anim_lean",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealAnimLean.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealFirstPerson",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_first_person",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealFirstPerson.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "PhoenixSpear1",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "phoenix_spear_1",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/PhoenixSpear1Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Phoenix Spear"
+    },
+    {
+      "name": "AbilityCallout",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_callout",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/AbilityCallout.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "AoeDebug",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "aoe_debug",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/AoeDebug.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "AbilityHold",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_hold",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/AbilityHold.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "ChargeMeter",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "charge_meter",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/ChargeMeter.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "OrdealCombatState",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_combat_state",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealCombatState.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "InCombat",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "in_combat",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/InCombatMobEffect.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "InCombatEffectExpires",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "in_combat_effect_expires",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/InCombatEffectExpiresProcedure.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "OrdealAdmin",
+      "type": "command",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ordeal_admin",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/command/OrdealAdminCommand.java"
+        ]
+      },
+      "path": "~/Commands"
+    },
+    {
+      "name": "OrdealFpPlayback",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_fp_playback",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealFpPlayback.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "OrdealImpactWords",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_impact_words",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealImpactWords.java"
+        ]
+      }
+    },
+    {
+      "name": "OrdealImpactPayload",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_impact_payload",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealImpactPayload.java"
+        ]
+      }
+    }
+  ],
+  "variable_elements": [
+    {
+      "name": "level",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "xp",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "xpCap",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "sp",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "spLifetime",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "spLifetime_Cap",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "450.0"
+    },
+    {
+      "name": "talentSP",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "talentSP_Lifetime",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "talentSp_Lifetime_Cap",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "150.0"
+    },
+    {
+      "name": "statStrength",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "statDurability",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "statAgility",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "statHealth",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0.0"
+    },
+    {
+      "name": "statChi",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "statChiControl",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "statPerception",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "chi",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "chiMax",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "chiCharging",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "ChiConcealed",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "chiLimit",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "spawnRandom",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "bloodConsumed",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "talent1_id",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": "none"
+    },
+    {
+      "name": "talent1_strength",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "talent1_source",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "talent2_id",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": "none"
+    },
+    {
+      "name": "talent2_strength",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "talent2_source",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "limiterPct",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "ownedBasics",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "ability_select",
+      "type": "string",
+      "scope": "player_lifetime",
+      "value": ""
+    },
+    {
+      "name": "loadout_1",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "loadout_2",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "loadout_3",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "loadout_4",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "loadout_5",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "loadout_6",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "loadout_7",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "loadout_8",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "loadout_9",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "loadout_10",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "ability_Row",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "1.0"
+    },
+    {
+      "name": "family",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "clan",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": ""
+    },
+    {
+      "name": "combatMode",
+      "type": "logic",
+      "scope": "player_lifetime",
+      "value": "false"
+    },
+    {
+      "name": "key_pressed",
+      "type": "logic",
+      "scope": "player_lifetime",
+      "value": "false"
+    },
+    {
+      "name": "abilityName",
+      "type": "string",
+      "scope": "player_lifetime",
+      "value": "\"\""
+    },
+    {
+      "name": "damage",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "knockback",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "guard",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "guardMax",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "damageReduction",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "attackPower",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "guardRegenTick",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "inCombatWith",
+      "type": "string",
+      "scope": "player_lifetime",
+      "value": "none"
+    },
+    {
+      "name": "chiColor",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": "none"
+    },
+    {
+      "name": "race",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": "human"
+    },
+    {
+      "name": "impactFrames",
+      "type": "logic",
+      "scope": "player_persistent",
+      "value": "true"
+    },
+    {
+      "name": "hit_VFX",
+      "type": "logic",
+      "scope": "player_persistent",
+      "value": "true"
+    },
+    {
+      "name": "chargePower",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "1.0"
+    }
+  ],
+  "sound_elements": [
+    {
+      "name": "gaurd_break",
+      "files": [
+        "gaurd_break"
+      ],
+      "category": "player",
+      "subtitle": "gaurd_break"
+    }
+  ],
+  "tag_elements": {},
+  "tab_element_order": {},
+  "language_map": {
+    "en_us": {
+      "key.ordeal.kode_field_terminal": "Kode Field Terminal",
+      "effect.ordeal.cd_1": "Cooldown",
+      "effect.ordeal.cd_2": "Cooldown",
+      "effect.ordeal.cd_3": "Cooldown",
+      "effect.ordeal.cd_4": "Cooldown",
+      "effect.ordeal.cd_5": "Cooldown",
+      "effect.ordeal.cd_6": "Cooldown",
+      "effect.ordeal.cd_7": "Cooldown",
+      "effect.ordeal.cd_8": "Cooldown",
+      "effect.ordeal.cd_9": "Cooldown",
+      "effect.ordeal.cd_10": "Cooldown",
+      "effect.ordeal.stunned": "Stunned",
+      "effect.ordeal.up_dash": "Dash",
+      "effect.ordeal.down_dash": "Dash",
+      "effect.ordeal.forward_dash": "Dash",
+      "effect.ordeal.forward_dash_no_air_time": "Dash",
+      "key.ordeal.combat_mode": "Combat Mode",
+      "key.ordeal.ability_1": "Ability 1",
+      "key.ordeal.ability_2": "Ability 2",
+      "key.ordeal.ability_3": "Ability 3",
+      "key.ordeal.ability_4": "Ability 4",
+      "key.ordeal.ability_5": "Ability 5",
+      "death.attack.talent.item": "%1$s was killed by %2$s using %3$s in combat",
+      "death.attack.talent.player": "%1$s died against %2$s in combat.",
+      "death.attack.talent": "%1$s died in combat",
+      "effect.ordeal.screen_shake": "Screen Shake",
+      "death.attack.attack_power.item": "%1$s was killed by %2$s using %3$s in combat",
+      "death.attack.attack_power.player": "%1$s died against %2$s in combat",
+      "death.attack.attack_power": "%1$s died in combat",
+      "effect.ordeal.phoenix_spear": "Phoenix Spear",
+      "key.ordeal.ability_row_swap_key": "Combat Row Swap",
+      "subtitles.gaurd_break": "gaurd_break",
+      "effect.ordeal.in_combat": "In Combat"
+    }
+  },
+  "metadata": {
+    "files": [
+      "src/main/java/net/mcreator/ordeal/init/OrdealModScreens.java",
+      "src/main/java/net/mcreator/ordeal/init/OrdealModMenus.java",
+      "src/main/java/net/mcreator/ordeal/network/MenuStateUpdateMessage.java",
+      "src/main/java/net/mcreator/ordeal/init/OrdealModKeyMappings.java",
+      "src/main/java/net/mcreator/ordeal/init/OrdealModMobEffects.java",
+      "src/main/java/net/mcreator/ordeal/OrdealModPlayerAnimationAPI.java",
+      "src/main/resources/pack.mcmeta",
+      "src/main/java/net/mcreator/ordeal/client/ClientHelper.java",
+      "src/main/java/net/mcreator/ordeal/network/NbtArrayLists.java",
+      "src/main/java/net/mcreator/ordeal/mixin/EntityRenderDispatcherMixin.java",
+      "src/main/java/net/mcreator/ordeal/network/OrdealModVariables.java",
+      "src/main/java/net/mcreator/ordeal/mixin/ItemInHandLayerMixin.java",
+      "src/main/java/net/mcreator/ordeal/mixin/PlayerAnimationMixin.java",
+      "src/main/resources/assets/ordeal/sounds.json",
+      "src/main/java/net/mcreator/ordeal/init/OrdealModSounds.java",
+      "src/main/java/net/mcreator/ordeal/mixin/LevelRendererMixin.java",
+      "src/main/java/net/mcreator/ordeal/client/RenderUtils.java",
+      "src/main/resources/META-INF/neoforge.mods.toml",
+      "src/main/java/net/mcreator/ordeal/mixin/PlayerAnimationRendererMixin.java",
+      "src/main/java/net/mcreator/ordeal/mixin/LivingEntityRendererMixin.java",
+      "src/main/java/net/mcreator/ordeal/mixin/CameraAccessor.java",
+      "src/main/java/net/mcreator/ordeal/OrdealMod.java",
+      "src/main/java/net/mcreator/ordeal/mixin/ItemInHandRendererMixin.java",
+      "src/main/resources/ordeal.mixins.json",
+      "src/main/resources/META-INF/accesstransformer.cfg",
+      "src/main/java/net/mcreator/ordeal/network/PlayPlayerAnimationMessage.java",
+      "src/main/java/net/mcreator/ordeal/client/ItemArms.java"
+    ]
+  },
+  "foldersRoot": {
+    "name": "~",
+    "children": [
+      {
+        "name": "GUI",
+        "children": [
+          {
+            "name": "GUI Procedures",
+            "children": []
+          },
+          {
+            "name": "Elements",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "Talents",
+        "children": [
+          {
+            "name": "Ilios",
+            "children": [
+              {
+                "name": "Phoenix Spear",
+                "children": []
+              },
+              {
+                "name": "Phoenix Fire",
+                "children": []
+              },
+              {
+                "name": "Decending Meteor",
+                "children": []
+              },
+              {
+                "name": "Trochos Armaton",
+                "children": []
+              },
+              {
+                "name": "Trochos Armaton Forward",
+                "children": []
+              },
+              {
+                "name": "Sun Spear",
+                "children": []
+              },
+              {
+                "name": "Chariot Wheel",
+                "children": []
+              },
+              {
+                "name": "Akonito",
+                "children": []
+              },
+              {
+                "name": "Tomas",
+                "children": []
+              },
+              {
+                "name": "Ilios State",
+                "children": []
+              }
+            ]
+          },
+          {
+            "name": "Kataigida",
+            "children": []
+          },
+          {
+            "name": "Okeanos",
+            "children": []
+          },
+          {
+            "name": "Thanatos",
+            "children": []
+          },
+          {
+            "name": "Kirin",
+            "children": []
+          },
+          {
+            "name": "Hide Forge",
+            "children": []
+          },
+          {
+            "name": "Kong",
+            "children": []
+          },
+          {
+            "name": "Chichioya no Hai",
+            "children": []
+          },
+          {
+            "name": "Weapon Mastery",
+            "children": []
+          },
+          {
+            "name": "Hisame",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "NPCS",
+        "children": []
+      },
+      {
+        "name": "Potions",
+        "children": []
+      },
+      {
+        "name": "Keys",
+        "children": [
+          {
+            "name": "procedures",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "Commands",
+        "children": []
+      },
+      {
+        "name": "Animation Editor",
+        "children": []
+      },
+      {
+        "name": "Elements",
+        "children": []
+      },
+      {
+        "name": "Types",
+        "children": []
+      },
+      {
+        "name": "VFX",
+        "children": []
+      },
+      {
+        "name": "Combat",
+        "children": [
+          {
+            "name": "Stats",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "Animator",
+        "children": []
+      }
+    ]
+  },
+  "workspaceSettings": {
+    "modid": "ordeal",
+    "modName": "Ordeal",
+    "version": "0.1",
+    "author": "DarknessDxD",
+    "license": "Not specified",
+    "serverSideOnly": false,
+    "requiredMods": [],
+    "dependencies": [],
+    "dependants": [],
+    "mcreatorDependencies": [
+      "photon"
+    ],
+    "currentGenerator": "neoforge-1.21.1",
+    "modElementsPackage": "net.mcreator.ordeal"
+  },
+  "mcreatorVersion": 202600114619
+}

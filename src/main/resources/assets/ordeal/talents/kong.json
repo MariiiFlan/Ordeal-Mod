@@ -1,0 +1,25 @@
+{
+  "id": "kong",
+  "name": "KONG",
+  "short": "KONG",
+  "desc": "Primal shift. Trades form for mass and reach; what you gain in raw force you give up in finesse.",
+  "accent": "E8608F",
+  "types": [
+    "SHIFT",
+    "CREATION"
+  ],
+  "abilities": [
+    {
+      "id": "primal_shift",
+      "icon": "PS",
+      "name": "Primal Shift",
+      "kind": "SHIFT \u00b7 TRANSFORM",
+      "desc": "Takes on the frame of the beast. Reach, mass and raw force scale with the Talent; finesse does not.",
+      "req": 5,
+      "chi": 16,
+      "cd": 10.0,
+      "base": 4,
+      "per": 0.3
+    }
+  ]
+}

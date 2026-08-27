@@ -1,0 +1,12 @@
+{
+  "_fv": 85,
+  "_type": "keybind",
+  "definition": {
+    "triggerKey": "Z",
+    "keyBindingName": "Combat Row Swap",
+    "keyBindingCategoryKey": "ordeal",
+    "onKeyPressed": {
+      "name": "AbilityRowSwap"
+    }
+  }
+}

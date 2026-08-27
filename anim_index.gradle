@@ -1,0 +1,35 @@
+// Ordeal Animator — bundled animation index generator.
+//
+// Jar contents can't be enumerated at runtime, so this writes
+// src/main/resources/assets/ordeal/anim/_index.json listing every
+// bundled clip, before resources are processed into the jar.
+//
+// Apply from mcreator.gradle (NOT build.gradle — MCreator regenerates that):
+//     apply from: 'anim_index.gradle'
+
+tasks.register('generateAnimIndex') {
+    def animDir = file('src/main/resources/assets/ordeal/anim')
+    def indexFile = new File(animDir, '_index.json')
+
+    inputs.dir(animDir).optional()
+    outputs.file(indexFile)
+
+    doLast {
+        if (!animDir.exists()) {
+            animDir.mkdirs()
+        }
+        def names = []
+        animDir.listFiles()?.each { f ->
+            if (f.name.endsWith('.json') && f.name != '_index.json') {
+                names << f.name.substring(0, f.name.length() - 5)
+            }
+        }
+        names.sort()
+        indexFile.text = new groovy.json.JsonBuilder(names).toPrettyString()
+        println "[OrdealAnim] Indexed ${names.size()} bundled animation(s)."
+    }
+}
+
+tasks.named('processResources') {
+    dependsOn 'generateAnimIndex'
+}

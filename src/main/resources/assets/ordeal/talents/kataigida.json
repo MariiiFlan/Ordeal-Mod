@@ -1,0 +1,25 @@
+{
+  "id": "kataigida",
+  "name": "KATAIGIDA",
+  "short": "KAT",
+  "desc": "Storm chi. Compresses charge into unstable shapes that arc to whatever is standing closest when they land.",
+  "accent": "9B8CFF",
+  "types": [
+    "ELEMENTAL"
+  ],
+  "abilities": [
+    {
+      "id": "thyella_lightning_ball",
+      "icon": "LB",
+      "name": "Thyella: Lightning Ball",
+      "kind": "RANGED \u00b7 PROJECTILE",
+      "desc": "Compresses storm chi into an unstable sphere and throws it. Arcs to anything close when it lands.",
+      "talentStrReq": 0,
+      "levelNeeded": 0,
+      "chiCost": 12,
+      "cooldownTicks": 70,
+      "baseDmg": 6,
+      "extraDmg": 0.4
+    }
+  ]
+}

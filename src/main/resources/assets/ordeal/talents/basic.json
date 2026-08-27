@@ -1,0 +1,34 @@
+{
+  "id": "basic",
+  "name": "BASIC ABILITIES",
+  "short": "BASIC",
+  "desc": "Techniques any awakened body can learn. No talent needed - only the discipline to spend chi well.",
+  "accent": "7ED8F5",
+  "types": [
+    "UNIVERSAL"
+  ],
+  "abilities": [
+    {
+      "id": "barrage_punch",
+      "icon": "BP",
+      "name": "Barrage Punch",
+      "kind": "MELEE \u00b7 COMBO",
+      "desc": "A rapid flurry of chi-hardened strikes. Each hit lands light, but the combo builds pressure and staggers a guarding opponent.",
+      "reqStats": {
+        "strength": 5,
+        "agility": 4
+      },
+      "levelNeeded": 0,
+      "chiCost": 8,
+      "cooldownTicks": 40,
+      "baseDmg": 4,
+      "extraDmg": 0.3,
+      "hold": {
+        "mode": "channel",
+        "maxSeconds": 3.0,
+        "chiPerSecond": 5,
+        "tickEvery": 4
+      }
+    }
+  ]
+}

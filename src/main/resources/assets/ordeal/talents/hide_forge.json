@@ -1,0 +1,24 @@
+{
+  "id": "hide_forge",
+  "name": "HIDE FORGE",
+  "short": "HIDE",
+  "desc": "Chi worked like leather. Plates the body against damage instead of spending it all on offence.",
+  "accent": "46C88C",
+  "types": [
+    "HIDE"
+  ],
+  "abilities": [
+    {
+      "id": "chi_plating",
+      "icon": "CP",
+      "name": "Chi Plating",
+      "kind": "STATE \u00b7 GUARD",
+      "desc": "Hardens the chi shell into layered plating. Raises Guard while active and blunts the first hit of any exchange.",
+      "req": 5,
+      "chi": 14,
+      "cd": 8.0,
+      "base": 0,
+      "per": 0
+    }
+  ]
+}

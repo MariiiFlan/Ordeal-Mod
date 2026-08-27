@@ -1,0 +1,12 @@
+{
+  "_fv": 85,
+  "_type": "keybind",
+  "definition": {
+    "triggerKey": "V",
+    "keyBindingName": "Ability 4",
+    "keyBindingCategoryKey": "ordeal",
+    "onKeyPressed": {
+      "name": "AbilityCall"
+    }
+  }
+}

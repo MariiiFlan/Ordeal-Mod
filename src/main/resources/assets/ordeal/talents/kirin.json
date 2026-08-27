@@ -1,0 +1,24 @@
+{
+  "id": "kirin",
+  "name": "KIRIN",
+  "short": "KIRIN",
+  "desc": "The unseen step. Speed bought straight out of the chi pool - move before the hit has finished arriving.",
+  "accent": "C6D94A",
+  "types": [
+    "HASTE"
+  ],
+  "abilities": [
+    {
+      "id": "kirin_step",
+      "icon": "KS",
+      "name": "Kirin Step",
+      "kind": "HASTE \u00b7 BURST",
+      "desc": "Burns chi to close distance faster than the eye tracks. The body pays for it, which is why Haste talents raise durability alongside speed.",
+      "req": 5,
+      "chi": 10,
+      "cd": 4.0,
+      "base": 4,
+      "per": 0.3
+    }
+  ]
+}

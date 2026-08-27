@@ -1,0 +1,25 @@
+{
+  "id": "chichioya_no_hai",
+  "name": "CHICHIOYA NO HAI",
+  "short": "HAI",
+  "desc": "Father's ash. Lays down cover you can hide inside and fight from - the field is the weapon, not the strike.",
+  "accent": "B08BD1",
+  "types": [
+    "RANGE CONTROL",
+    "CREATION"
+  ],
+  "abilities": [
+    {
+      "id": "ash_veil",
+      "icon": "AV",
+      "name": "Ash Veil",
+      "kind": "RANGE CONTROL \u00b7 FIELD",
+      "desc": "Spreads a curtain of controlled ash. Everything inside it is held, slowed, and watched.",
+      "req": 5,
+      "chi": 12,
+      "cd": 6.0,
+      "base": 4,
+      "per": 0.3
+    }
+  ]
+}
