@@ -21,6 +21,7 @@ import net.minecraft.commands.CommandSource;
 
 import net.mcreator.ordeal.network.OrdealModVariables;
 import net.mcreator.ordeal.init.OrdealModMobEffects;
+import net.mcreator.ordeal.OrdealMod;
 
 import java.util.Comparator;
 
@@ -43,7 +44,7 @@ public class PhoenixSpearOnTickProcedure {
 						{
 							OrdealModVariables.PlayerVariables _vars = entity.getData(OrdealModVariables.PLAYER_VARIABLES);
 							_vars.knockback = (entity.getData(OrdealModVariables.PLAYER_VARIABLES).statStrength - entityiterator.getData(OrdealModVariables.PLAYER_VARIABLES).statDurability)
-									* entityiterator.getData(OrdealModVariables.PLAYER_VARIABLES).chargePower;
+									* entity.getData(OrdealModVariables.PLAYER_VARIABLES).chargePower;
 							_vars.knockback = entity.getData(OrdealModVariables.PLAYER_VARIABLES).knockback * 0.1;
 							_vars.markSyncDirty();
 						}
@@ -68,20 +69,22 @@ public class PhoenixSpearOnTickProcedure {
 						entityiterator.setDeltaMovement(new Vec3((entity.getLookAngle().x * entity.getData(OrdealModVariables.PLAYER_VARIABLES).knockback), (entity.getDeltaMovement().y()),
 								(entity.getLookAngle().z * entity.getData(OrdealModVariables.PLAYER_VARIABLES).knockback)));
 						entityiterator.hurt(new DamageSource(world.holderOrThrow(ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.parse("ordeal:talent"))), entity), (float) entity.getData(OrdealModVariables.PLAYER_VARIABLES).damage);
-						if (entity instanceof LivingEntity _entity)
-							_entity.removeEffect(OrdealModMobEffects.PHOENIX_SPEAR);
+						OrdealMod.queueServerWork(3, () -> {
+							if (entity instanceof LivingEntity _entity)
+								_entity.removeEffect(OrdealModMobEffects.PHOENIX_SPEAR);
+						});
 					}
 					{
 						Entity _ent = entity;
 						if (!_ent.level().isClientSide() && _ent.getServer() != null) {
 							_ent.getServer().getCommands().performPrefixedCommand(new CommandSourceStack(CommandSource.NULL, _ent.position(), _ent.getRotationVector(), _ent.level() instanceof ServerLevel ? (ServerLevel) _ent.level() : null, 4,
-									_ent.getName().getString(), _ent.getDisplayName(), _ent.level().getServer(), _ent), "photon fx photon:ilios_phonixspear entity Dev 0 -0.2 0 0 0 0 1 1 1 0 false true xrot");
+									_ent.getName().getString(), _ent.getDisplayName(), _ent.level().getServer(), _ent), "photon fx photon:ilios_phonixspear entity @s 0 -0.2 0 0 0 0 1 1 1 0 false true xrot");
 						}
 					}
 					if (entityiterator instanceof LivingEntity _entity && !_entity.level().isClientSide())
 						_entity.addEffect(new MobEffectInstance(OrdealModMobEffects.SCREEN_SHAKE, 3, 1, false, false));
 					if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
-						_entity.addEffect(new MobEffectInstance(OrdealModMobEffects.FORWARD_DASH, 2, 2, false, false));
+						_entity.addEffect(new MobEffectInstance(OrdealModMobEffects.FORWARD_DASH, 2, (int) (2 * entity.getData(OrdealModVariables.PLAYER_VARIABLES).chargePower), false, false));
 				}
 			}
 		}

@@ -1,6 +1,7 @@
 package net.mcreator.ordeal.procedures;
 
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity;
@@ -28,11 +29,17 @@ public class PhoenixSpear0Procedure {
 		double talent_Str = 0;
 		double reqStat_perception = 0;
 		double mode = 0;
+		double chiPerTick = 0;
+		double pays = 0;
+		double IgniteSeconds = 0;
+		double Homing = 0;
 		boolean fireonpress = false;
 		boolean hold = false;
+		boolean ExplodeOnImpact = false;
+		boolean Projectile = false;
 		if (!world.isClientSide()) {
 			talent_id = "ilios";
-			Talent_STR_Req = 0;
+			Talent_STR_Req = 2;
 			if ((entity.getData(OrdealModVariables.PLAYER_VARIABLES).talent1_id).equals(talent_id)) {
 				talent_Str = entity.getData(OrdealModVariables.PLAYER_VARIABLES).talent1_strength;
 			} else if ((entity.getData(OrdealModVariables.PLAYER_VARIABLES).talent2_id).equals(talent_id)) {
@@ -52,13 +59,19 @@ public class PhoenixSpear0Procedure {
 				_vars.damage = (BaseDMG + talent_Str * ExtraDMG) * entity.getData(OrdealModVariables.PLAYER_VARIABLES).chargePower;
 				_vars.markSyncDirty();
 			}
+			IgniteSeconds = 3;
 			reqStat_Str = 0;
 			reqStat_Dura = 0;
 			reqStat_Agil = 0;
 			reqStat_perception = 0;
+			pays = 1;
 			hold = true;
 			fireonpress = false;
 			mode = 1;
+			chiPerTick = 0;
+			Projectile = false;
+			ExplodeOnImpact = true;
+			Homing = 0;
 			if ((entity.getData(OrdealModVariables.PLAYER_VARIABLES).abilityName).equals(entity.getData(OrdealModVariables.PLAYER_VARIABLES).loadout_1)) {
 				cooldown = (entity instanceof LivingEntity _livEnt && _livEnt.hasEffect(OrdealModMobEffects.CD_1) ? _livEnt.getEffect(OrdealModMobEffects.CD_1).getDuration() : 0) / 20;
 			} else if ((entity.getData(OrdealModVariables.PLAYER_VARIABLES).abilityName).equals(entity.getData(OrdealModVariables.PLAYER_VARIABLES).loadout_2)) {
@@ -82,7 +95,7 @@ public class PhoenixSpear0Procedure {
 			}
 			if (entity.getData(OrdealModVariables.PLAYER_VARIABLES).combatMode == true) {
 				if (talent_Str >= Talent_STR_Req) {
-					if (!(entity instanceof LivingEntity _livEnt15 && _livEnt15.hasEffect(OrdealModMobEffects.STUNNED))) {
+					if (!(entity instanceof LivingEntity _livEnt16 && _livEnt16.hasEffect(OrdealModMobEffects.STUNNED))) {
 						if (cooldown <= 0) {
 							if (entity.getData(OrdealModVariables.PLAYER_VARIABLES).chi >= Chi_Cost) {
 								PhoenixSpear1Procedure.execute(world, entity);

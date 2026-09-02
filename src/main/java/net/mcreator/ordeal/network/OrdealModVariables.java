@@ -12,6 +12,7 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.bus.api.SubscribeEvent;
 
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
@@ -122,6 +123,12 @@ public class OrdealModVariables {
 		clone.race = original.race;
 		clone.impactFrames = original.impactFrames;
 		clone.hit_VFX = original.hit_VFX;
+		clone.chi_base = original.chi_base;
+		clone.talent1_chiBase = original.talent1_chiBase;
+		clone.talent2_chiBase = original.talent2_chiBase;
+		clone.talent1_ChiMax = original.talent1_ChiMax;
+		clone.talent2_ChiMax = original.talent2_ChiMax;
+		clone.FlightStyle = original.FlightStyle;
 		if (!event.isWasDeath()) {
 			clone.chi = original.chi;
 			clone.chiMax = original.chiMax;
@@ -142,6 +149,16 @@ public class OrdealModVariables {
 			clone.guardRegenTick = original.guardRegenTick;
 			clone.inCombatWith = original.inCombatWith;
 			clone.chargePower = original.chargePower;
+			clone.talent1_Chi = original.talent1_Chi;
+			clone.talent2_Chi = original.talent2_Chi;
+			clone.talentState = original.talentState;
+			clone.itemSwap = original.itemSwap;
+			clone.beforeSwap = original.beforeSwap;
+			clone.flightOn = original.flightOn;
+			clone.flightIdle = original.flightIdle;
+			clone.flightBoost = original.flightBoost;
+			clone.flightThrottle = original.flightThrottle;
+			clone.flightSpeed = original.flightSpeed;
 		}
 		event.getEntity().setData(PLAYER_VARIABLES, clone);
 	}
@@ -209,6 +226,22 @@ public class OrdealModVariables {
 		public boolean impactFrames = true;
 		public boolean hit_VFX = true;
 		public double chargePower = 1.0;
+		public double chi_base = 50.0;
+		public double talent1_Chi = 0;
+		public double talent2_Chi = 0;
+		public double talent1_chiBase = 0;
+		public double talent2_chiBase = 0;
+		public double talent1_ChiMax = 0;
+		public double talent2_ChiMax = 0;
+		public double talentState = 1.0;
+		public ItemStack itemSwap = ItemStack.EMPTY;
+		public ItemStack beforeSwap = ItemStack.EMPTY;
+		public String FlightStyle = "default";
+		public boolean flightOn = false;
+		public boolean flightIdle = false;
+		public boolean flightBoost = false;
+		public double flightThrottle = 0;
+		public double flightSpeed = 0;
 
 		@Override
 		public CompoundTag serializeNBT(HolderLookup.Provider lookupProvider) {
@@ -274,6 +307,22 @@ public class OrdealModVariables {
 			nbt.putBoolean("impactFrames", impactFrames);
 			nbt.putBoolean("hit_VFX", hit_VFX);
 			nbt.putDouble("chargePower", chargePower);
+			nbt.putDouble("chi_base", chi_base);
+			nbt.putDouble("talent1_Chi", talent1_Chi);
+			nbt.putDouble("talent2_Chi", talent2_Chi);
+			nbt.putDouble("talent1_chiBase", talent1_chiBase);
+			nbt.putDouble("talent2_chiBase", talent2_chiBase);
+			nbt.putDouble("talent1_ChiMax", talent1_ChiMax);
+			nbt.putDouble("talent2_ChiMax", talent2_ChiMax);
+			nbt.putDouble("talentState", talentState);
+			nbt.put("itemSwap", itemSwap.saveOptional(lookupProvider));
+			nbt.put("beforeSwap", beforeSwap.saveOptional(lookupProvider));
+			nbt.putString("FlightStyle", FlightStyle);
+			nbt.putBoolean("flightOn", flightOn);
+			nbt.putBoolean("flightIdle", flightIdle);
+			nbt.putBoolean("flightBoost", flightBoost);
+			nbt.putDouble("flightThrottle", flightThrottle);
+			nbt.putDouble("flightSpeed", flightSpeed);
 			return nbt;
 		}
 
@@ -340,6 +389,22 @@ public class OrdealModVariables {
 			impactFrames = nbt.getBoolean("impactFrames");
 			hit_VFX = nbt.getBoolean("hit_VFX");
 			chargePower = nbt.getDouble("chargePower");
+			chi_base = nbt.getDouble("chi_base");
+			talent1_Chi = nbt.getDouble("talent1_Chi");
+			talent2_Chi = nbt.getDouble("talent2_Chi");
+			talent1_chiBase = nbt.getDouble("talent1_chiBase");
+			talent2_chiBase = nbt.getDouble("talent2_chiBase");
+			talent1_ChiMax = nbt.getDouble("talent1_ChiMax");
+			talent2_ChiMax = nbt.getDouble("talent2_ChiMax");
+			talentState = nbt.getDouble("talentState");
+			itemSwap = ItemStack.parseOptional(lookupProvider, nbt.getCompound("itemSwap"));
+			beforeSwap = ItemStack.parseOptional(lookupProvider, nbt.getCompound("beforeSwap"));
+			FlightStyle = nbt.getString("FlightStyle");
+			flightOn = nbt.getBoolean("flightOn");
+			flightIdle = nbt.getBoolean("flightIdle");
+			flightBoost = nbt.getBoolean("flightBoost");
+			flightThrottle = nbt.getDouble("flightThrottle");
+			flightSpeed = nbt.getDouble("flightSpeed");
 		}
 
 		public void markSyncDirty() {

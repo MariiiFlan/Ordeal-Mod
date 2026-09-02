@@ -1,5 +1,7 @@
 package net.mcreator.ordeal.procedures;
 
+import net.neoforged.neoforge.network.PacketDistributor;
+
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.LivingEntity;
@@ -7,9 +9,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.CommandSource;
+import net.minecraft.nbt.CompoundTag;
 
+import net.mcreator.ordeal.network.PlayPlayerAnimationMessage;
 import net.mcreator.ordeal.init.OrdealModMobEffects;
 
 public class PhoenixSpear1Procedure {
@@ -30,23 +32,21 @@ public class PhoenixSpear1Procedure {
 		double talent_Str = 0;
 		if (!world.isClientSide()) {
 			if (entity instanceof ServerPlayer || entity instanceof Player) {
-				{
-					Entity _ent = entity;
-					if (!_ent.level().isClientSide() && _ent.getServer() != null) {
-						_ent.getServer().getCommands().performPrefixedCommand(new CommandSourceStack(CommandSource.NULL, _ent.position(), _ent.getRotationVector(), _ent.level() instanceof ServerLevel ? (ServerLevel) _ent.level() : null, 4,
-								_ent.getName().getString(), _ent.getDisplayName(), _ent.level().getServer(), _ent), "");
-					}
-				}
-				{
-					Entity _ent = entity;
-					if (!_ent.level().isClientSide() && _ent.getServer() != null) {
-						_ent.getServer().getCommands().performPrefixedCommand(new CommandSourceStack(CommandSource.NULL, _ent.position(), _ent.getRotationVector(), _ent.level() instanceof ServerLevel ? (ServerLevel) _ent.level() : null, 4,
-								_ent.getName().getString(), _ent.getDisplayName(), _ent.level().getServer(), _ent), "");
+				if (entity instanceof Player) {
+					if (entity.level().isClientSide()) {
+						CompoundTag data = entity.getPersistentData();
+						data.putString("PlayerCurrentAnimation", "ordeal:phoneix_spear");
+						data.putBoolean("OverrideCurrentAnimation", true);
+						data.putBoolean("FirstPersonAnimation", true);
+					} else {
+						PacketDistributor.sendToPlayersInDimension((ServerLevel) entity.level(), new PlayPlayerAnimationMessage(entity.getId(), "ordeal:phoneix_spear", true, true));
 					}
 				}
 			}
 			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
 				_entity.addEffect(new MobEffectInstance(OrdealModMobEffects.PHOENIX_SPEAR, 6, 1, false, false));
+			if (entity instanceof LivingEntity _entity && !_entity.level().isClientSide())
+				_entity.addEffect(new MobEffectInstance(OrdealModMobEffects.NEGLET_FALL_DMG, 500, 1, false, false));
 		}
 	}
 }

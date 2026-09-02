@@ -7,6 +7,9 @@
     "keyBindingCategoryKey": "ordeal",
     "onKeyPressed": {
       "name": "AbilityCall"
+    },
+    "onKeyReleased": {
+      "name": "AbilityKeyReleased"
     }
   }
 }

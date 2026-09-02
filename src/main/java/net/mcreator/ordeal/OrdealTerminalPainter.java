@@ -34,6 +34,49 @@ public class OrdealTerminalPainter {
 	private static final int FOOT_Y = 292;
 
 	private static final int TAB_CHAR_W = 62, TAB_TAL_W = 54, TAB_CHI_W = 30, TOPTAB_H = 16, TOPTAB_Y = 4;
+	private static final String[] TOPTABS  = { "CHARACTER", "TALENTS", "CHI", "TRAITS", "PANOPLY" };
+	private static final int      TOPTAB_GAP = 6;
+	/** 2px either side of the label, so the underline is not flush to the glyphs. */
+	private static final int      TOPTAB_PAD = 4;
+
+	/**
+	 * Each tab is as wide as its own text. Fixed widths meant CHI sat in a 30px
+	 * box and PANOPLY in a 56px one, so the visible gaps between labels were all
+	 * different lengths - which is what made the strip look badly spaced.
+	 */
+	private static int tabW(int i) {
+		return OrdealDraw.width(TOPTABS[i]) + TOPTAB_PAD;
+	}
+
+	private static int tabsTotal() {
+		int total = -TOPTAB_GAP;
+		for (int i = 0; i < TOPTABS.length; i++) total += tabW(i) + TOPTAB_GAP;
+		return total;
+	}
+
+	/**
+	 * Left edge of the tab strip.
+	 *
+	 * Centred on the PANEL used to be fine with four tabs. PANOPLY made the
+	 * strip 280 wide, and centring that put its left edge at x+120 - straight
+	 * through "K.O.D.E > FIELD TERMINAL", which ends around x+148.
+	 *
+	 * So it centres on the space that is LEFT, between the title and the right
+	 * pad, instead of on the whole panel. Same balanced look, just measured
+	 * from where the header actually ends. If a sixth tab ever makes the strip
+	 * wider than that space, it pins to the title and runs off the right rather
+	 * than back over the text.
+	 */
+	private static int topTabsX(int x) {
+		int total = tabsTotal();
+		// centred on the PANEL, which is where the eye expects it
+		int centred = x + (PANEL_W - total) / 2;
+		// ...unless that would run into the title, which is why it was not
+		// centred before. Auto-sized tabs are narrow enough that this floor
+		// almost never bites; when it does it is by a few pixels.
+		int floor = x + PAD + OrdealDraw.width("K.O.D.E > FIELD TERMINAL") + 8;
+		return Math.max(centred, floor);
+	}
 
 	private static final int MODEL_X = PAD, MODEL_Y = 32, MODEL_W = 130, MODEL_H = 108;
 	private static final int ID_Y = 146, ID_H = 96;
@@ -55,6 +98,8 @@ public class OrdealTerminalPainter {
 	private static final int SECT_Y = 144;
 	private static final int LIST_X = CONTENT_X, LIST_W = 296;
 	private static final int LIST_Y = 156, LROW_H = 16, ROWS_VISIBLE = 8;
+
+	public static String ENHANCEMENT_TAB = "enhancement";
 	private static final int LOAD_X = CONTENT_X + LIST_W + 10;
 	private static final int LOAD_W = CONTENT_W - LIST_W - 10;
 	private static final int SLOT = 30, SLOT_GAP = 5, SLOTS_Y = 156;
@@ -70,7 +115,12 @@ public class OrdealTerminalPainter {
 	private static final String[] STAT_CMD = {
 			"strength", "durability", "agility", "health", "chi", "chicontrol", "perception" };
 
-	private static int page = 0;   // 0 character, 1 talents, 2 chi
+	private static int page = 0;   // 0 character, 1 talents, 2 chi, 3 traits
+	private static int traitScroll = 0;
+
+	private static int traitSel = 0;
+	private static final int TRAIT_Y = 52, TRAIT_ROW_H = 28, TRAIT_ROWS = 8;
+	private static final int TRAIT_LIST_W = 236, TRAIT_GAP = 10;
 	private static int scroll = 0;
 	private static int activeTab = 0;
 
@@ -102,6 +152,8 @@ public class OrdealTerminalPainter {
 
 		if (page == 0) character(g, x, y, s, mx, my);
 		else if (page == 1) talents(g, x, y, s, mx, my);
+		else if (page == 3) traits(g, x, y, s, mx, my);
+		else if (page == 4) net.mcreator.ordeal.PanoplyPage.render(g, x, y, mx, my);
 		else chi(g, x, y, s, mx, my);
 
 		footer(g, x, y, s);
@@ -135,11 +187,17 @@ public class OrdealTerminalPainter {
 
 	@SubscribeEvent
 	public static void onScroll(ScreenEvent.MouseScrolled.Post event) {
-		if (!isTerminal(event.getScreen()) || page != 1) return;
+		if (!isTerminal(event.getScreen()) || (page != 1 && page != 3)) return;
 		Player player = Minecraft.getInstance().player;
 		if (player == null) return;
+		int step = (int) Math.signum(event.getScrollDeltaY());
+		if (page == 3) {
+			int max = Math.max(0, Snapshot.read(player).traits.size() - TRAIT_ROWS);
+			traitScroll = Math.max(0, Math.min(max, traitScroll - step));
+			return;
+		}
 		int max = Math.max(0, Snapshot.read(player).abilities.size() - ROWS_VISIBLE);
-		scroll = Math.max(0, Math.min(max, scroll - (int) Math.signum(event.getScrollDeltaY())));
+		scroll = Math.max(0, Math.min(max, scroll - step));
 	}
 
 	@SubscribeEvent
@@ -153,10 +211,15 @@ public class OrdealTerminalPainter {
 		int y = (screen.height - PANEL_H) / 2;
 		double mx = event.getMouseX(), my = event.getMouseY();
 
-		int tabsX = x + (PANEL_W - TAB_CHAR_W - TAB_TAL_W - TAB_CHI_W - 16) / 2;
-		if (OrdealDraw.inside(mx, my, tabsX, y + TOPTAB_Y, TAB_CHAR_W, TOPTAB_H)) { page = 0; return; }
-		if (OrdealDraw.inside(mx, my, tabsX + TAB_CHAR_W + 8, y + TOPTAB_Y, TAB_TAL_W, TOPTAB_H)) { page = 1; return; }
-		if (OrdealDraw.inside(mx, my, tabsX + TAB_CHAR_W + TAB_TAL_W + 16, y + TOPTAB_Y, TAB_CHI_W, TOPTAB_H)) { page = 2; return; }
+		int tabsX = topTabsX(x);
+		for (int i = 0; i < TOPTABS.length; i++) {
+			if (OrdealDraw.inside(mx, my, tabsX, y + TOPTAB_Y, tabW(i), TOPTAB_H)) {
+				page = i;
+				net.mcreator.ordeal.PanoplyPage.closed();   // nothing stays picked up across tabs
+				return;
+			}
+			tabsX += tabW(i) + TOPTAB_GAP;
+		}
 
 		Snapshot s = Snapshot.read(player);
 
@@ -176,7 +239,21 @@ public class OrdealTerminalPainter {
 			return;
 		}
 
+		if (page == 4) { net.mcreator.ordeal.PanoplyPage.click(x, y, mx, my, event.getButton()); return; }
+
 		if (page == 2) return;
+
+		if (page == 3) {
+			int lx = x + CONTENT_X, ly = y + TRAIT_Y;
+			for (int i = 0; i < s.traits.size(); i++) {
+				int ry = ly + (i - traitScroll) * TRAIT_ROW_H;
+				if (ry < ly || ry + TRAIT_ROW_H > ly + TRAIT_ROWS * TRAIT_ROW_H) continue;
+				if (OrdealDraw.inside(mx, my, lx, ry, TRAIT_LIST_W, TRAIT_ROW_H - 2)) {
+					traitSel = i; return;
+				}
+			}
+			return;
+		}
 
 		int cx = x + CONTENT_X;
 		int tx = cx;
@@ -203,6 +280,10 @@ public class OrdealTerminalPainter {
 						!net.mcreator.ordeal.OrdealSilhouette.SHOW_PRESENCE;
 				return;
 			}
+			if (r.passive) {
+				if (r.unlocked) act("passive", r.id, 0);
+				return;
+			}
 			if (r.unlocked) act("select", r.id.equals(s.selected) ? "" : r.id, 0);
 			return;
 		}
@@ -214,7 +295,7 @@ public class OrdealTerminalPainter {
 			if (!OrdealDraw.inside(mx, my, sx, sy, SLOT, SLOT)) continue;
 			boolean filled = s.loadout[i] != null && !s.loadout[i].isEmpty();
 			if (s.selectedName.isEmpty() && filled) act("bind", "", i + 1);
-			else if (!s.selectedName.isEmpty()) act("bind", s.selectedName, i + 1);
+			else if (!s.selectedName.isEmpty() && !selectedIsPassive(s)) act("bind", s.selectedName, i + 1);
 			return;
 		}
 	}
@@ -245,14 +326,24 @@ public class OrdealTerminalPainter {
 		if (!isTerminal(event.getScreen())) return;
 		heldStat = -1;
 		draggingConceal = false;
+		if (page == 4) {
+			// where a panoply drag lands, and where a click that never moved
+			// turns into the show/hide toggle
+			net.minecraft.client.gui.screens.Screen sc = event.getScreen();
+			int x = (sc.width - PANEL_W) / 2;
+			int y = (sc.height - PANEL_H) / 2;
+			net.mcreator.ordeal.PanoplyPage.release(x, y,
+					event.getMouseX(), event.getMouseY(), event.getButton());
+		}
 	}
 
 	@SubscribeEvent
 	public static void onOpen(ScreenEvent.Init.Post event) {
 		if (!isTerminal(event.getScreen())) return;
 		OrdealTalents.reload();
-		page = 0;
-		activeTab = 0;
+		if (page < 0 || page > 4) page = 0;
+		net.mcreator.ordeal.PanoplyPage.closed();
+		if (activeTab < 0) activeTab = 0;
 		scroll = 0;
 		heldStat = -1;
 		draggingConceal = false;
@@ -281,10 +372,11 @@ public class OrdealTerminalPainter {
 		OrdealDraw.rect(g, x + 1, y + HEADER_H, PANEL_W - 2, 1, OrdealDraw.CYAN_FAINT);
 		OrdealDraw.text(g, "K.O.D.E > FIELD TERMINAL", x + PAD, y + 9, OrdealDraw.CYAN);
 
-		int tabsX = x + (PANEL_W - TAB_CHAR_W - TAB_TAL_W - TAB_CHI_W - 16) / 2;
-		topTab(g, tabsX, y + TOPTAB_Y, TAB_CHAR_W, "CHARACTER", page == 0, mx, my);
-		topTab(g, tabsX + TAB_CHAR_W + 8, y + TOPTAB_Y, TAB_TAL_W, "TALENTS", page == 1, mx, my);
-		topTab(g, tabsX + TAB_CHAR_W + TAB_TAL_W + 16, y + TOPTAB_Y, TAB_CHI_W, "CHI", page == 2, mx, my);
+		int tabsX = topTabsX(x);
+		for (int i = 0; i < TOPTABS.length; i++) {
+			topTab(g, tabsX, y + TOPTAB_Y, tabW(i), TOPTABS[i], page == i, mx, my);
+			tabsX += tabW(i) + TOPTAB_GAP;
+		}
 	}
 
 	private static void topTab(GuiGraphics g, int x, int y, int w, String label,
@@ -298,7 +390,7 @@ public class OrdealTerminalPainter {
 	private static void footer(GuiGraphics g, int x, int y, Snapshot s) {
 		OrdealDraw.rect(g, x + 1, y + FOOT_Y - 6, PANEL_W - 2, 1, OrdealDraw.CYAN_FAINT);
 		OrdealDraw.text(g, "CHI LIMIT", x + PAD, y + FOOT_Y, OrdealDraw.CYAN_DIM);
-		OrdealDraw.text(g, (int) s.chiLimit + " / " + (int) OrdealStats.LIMIT_MAX,
+		OrdealDraw.text(g, (int) s.chiLimit + " / " + (int) s.limitMax,
 				x + PAD + OrdealDraw.width("CHI LIMIT") + 8, y + FOOT_Y, OrdealDraw.INK);
 
 		String tsp = "TALENT SP " + (int) s.talentSp + "  AND  USED " + (int) s.tspUsed + " / " + (int) s.tspCap;
@@ -380,7 +472,10 @@ public class OrdealTerminalPainter {
 			OrdealDraw.textRight(g, String.format("%02d", conceal > 0 ? eff : (int) v), valX, ry + 2,
 					conceal > 0 ? 0xFFFFD39A : OrdealDraw.INK);
 
-			boolean can = s.sp > 0 && v < 100 && v < s.level;
+			// spent out for the run: the cap is enforced server side now, so the
+			// button has to stop LOOKING clickable too
+			boolean spentOut = s.spCap > 0 && s.spUsed >= s.spCap;
+			boolean can = s.sp > 0 && v < 100 && v < s.level && !spentOut;
 			boolean hov = OrdealDraw.inside(mx, my, plusX, ry, 16, 14);
 			int col = can ? (hov ? 0xFFFFD9A0 : 0xFFFFB877) : OrdealDraw.LOCKED;
 			OrdealDraw.rect(g, plusX, ry, 16, 14, can ? (hov ? 0x33FFB877 : 0x1AFFB877) : 0);
@@ -395,6 +490,8 @@ public class OrdealTerminalPainter {
 				statTip.add(stat("NOW", effect(i, s), 0xFF7ED8F5));
 				if (conceal > 0) statTip.add(stat("CONCEALED", eff + " / " + (int) v, 0xFFFFB020));
 				if (v >= 100) statTip.add(tint("maxed", 0xFF5FE3A0));
+				else if (spentOut) statTip.add(tint("lifetime SP spent - " + (int) s.spUsed
+						+ " / " + (int) s.spCap, 0xFFFF6B6B));
 				else if (v >= s.level) statTip.add(tint("locked - needs level " + (int) (v + 1), 0xFFFF6B6B));
 				else if (s.sp <= 0) statTip.add(tint("no SP", 0xFFFF6B6B));
 				else statTip.add(tint("click + to raise - hold to channel", 0xFF5FE3A0));
@@ -548,6 +645,101 @@ public class OrdealTerminalPainter {
 		loadout(g, x, y, s, mx, my);
 	}
 
+	// ---- traits --------------------------------------------------------------
+
+	/**
+	 * Every trait in the mod, with the ones you actually hold floated to the top.
+	 * The list stays complete on purpose - it reads as a goal board - but your own
+	 * kit is what you see first.
+	 */
+	private static void traits(GuiGraphics g, int x, int y, Snapshot s, int mx, int my) {
+		int cx = x + CONTENT_X;
+
+		OrdealDraw.text(g, "TRAITS", cx, y + TTABS_Y, OrdealDraw.CYAN_DIM);
+		OrdealDraw.textRight(g, s.traitsOwned + " / " + s.traits.size() + " ACQUIRED",
+				cx + CONTENT_W, y + TTABS_Y, s.traitsOwned > 0 ? OrdealDraw.GREEN : OrdealDraw.INK_DIM);
+		OrdealDraw.rect(g, cx, y + TTABS_Y + 12, CONTENT_W, 1, OrdealDraw.CYAN_FAINT);
+
+		int ly = y + TRAIT_Y;
+		int viewH = TRAIT_ROWS * TRAIT_ROW_H;
+
+		if (s.traits.isEmpty()) {
+			OrdealDraw.text(g, "NO TRAITS REGISTERED - CHECK assets/ordeal/traits/",
+					cx, ly + 8, OrdealDraw.INK_DIM);
+			return;
+		}
+		if (traitSel >= s.traits.size()) traitSel = s.traits.size() - 1;
+
+		int maxScroll = Math.max(0, s.traits.size() - TRAIT_ROWS);
+		if (traitScroll > maxScroll) traitScroll = maxScroll;
+
+		// ---- left: the roster. One line each, so nothing can ever be clipped.
+		g.enableScissor(cx, ly, cx + TRAIT_LIST_W, ly + viewH);
+		for (int i = 0; i < s.traits.size(); i++) {
+			int ry = ly + (i - traitScroll) * TRAIT_ROW_H;
+			if (ry + TRAIT_ROW_H < ly || ry > ly + viewH) continue;
+
+			OrdealTraits.Trait t = s.traits.get(i);
+			boolean own = s.traitOwned[i];
+			boolean sel = i == traitSel;
+			boolean hov = OrdealDraw.inside(mx, my, cx, ry, TRAIT_LIST_W, TRAIT_ROW_H - 2);
+			int accent = own ? t.accent : OrdealDraw.LOCKED;
+
+			OrdealDraw.rect(g, cx, ry, TRAIT_LIST_W, TRAIT_ROW_H - 2,
+					sel ? OrdealDraw.alpha(accent, 0x24)
+							: hov ? 0x127ED8F5
+							: own ? OrdealDraw.alpha(t.accent, 0x0E) : 0x14000000);
+			OrdealDraw.rect(g, cx, ry, 3, TRAIT_ROW_H - 2, accent);
+			if (sel) OrdealDraw.outline(g, cx, ry, TRAIT_LIST_W, TRAIT_ROW_H - 2,
+					OrdealDraw.alpha(accent, 0x99));
+
+			OrdealDraw.text(g, t.name.toUpperCase(), cx + 10, ry + 4,
+					own ? OrdealDraw.INK : 0xFF6F93AD);
+			OrdealDraw.text(g, own ? "ACQUIRED" : "LOCKED", cx + 10, ry + 15,
+					own ? OrdealDraw.GREEN : 0xFF48626F);
+		}
+		g.disableScissor();
+		OrdealDraw.outline(g, cx, ly, TRAIT_LIST_W, viewH, OrdealDraw.CYAN_FAINT);
+
+		if (maxScroll > 0) {
+			int sx = cx + TRAIT_LIST_W - SCROLLBAR_W - 1;
+			OrdealDraw.rect(g, sx, ly + 1, SCROLLBAR_W, viewH - 2, 0x1A7ED8F5);
+			int thumbH = Math.max(10, (viewH - 2) * TRAIT_ROWS / s.traits.size());
+			OrdealDraw.rect(g, sx, ly + 1 + (viewH - 2 - thumbH) * traitScroll / maxScroll,
+					SCROLLBAR_W, thumbH, OrdealDraw.CYAN_DIM);
+		}
+
+		// ---- right: the selected trait in full, with room to breathe
+		OrdealTraits.Trait t = s.traits.get(traitSel);
+		boolean own = s.traitOwned[traitSel];
+		int accent = own ? t.accent : OrdealDraw.LOCKED;
+		int dx = cx + TRAIT_LIST_W + TRAIT_GAP;
+		int dw = CONTENT_W - TRAIT_LIST_W - TRAIT_GAP;
+
+		OrdealDraw.rect(g, dx, ly, dw, viewH, 0x1E000000);
+		OrdealDraw.outline(g, dx, ly, dw, viewH, OrdealDraw.alpha(accent, own ? 0x80 : 0x40));
+		OrdealDraw.brackets(g, dx, ly, dw, viewH, 8, accent);
+
+		OrdealDraw.text(g, t.name.toUpperCase(), dx + 12, ly + 12,
+				own ? accent : 0xFF6F93AD);
+		OrdealDraw.text(g, own ? "ACQUIRED" : "NOT ACQUIRED", dx + 12, ly + 24,
+				own ? OrdealDraw.GREEN : OrdealDraw.INK_DIM);
+		OrdealDraw.rect(g, dx + 12, ly + 36, dw - 24, 1, OrdealDraw.alpha(accent, 0x40));
+
+		java.util.List<String> body = OrdealDraw.wrapPx(t.desc, dw - 24, 8);
+		for (int i = 0; i < body.size(); i++)
+			OrdealDraw.text(g, body.get(i), dx + 12, ly + 46 + i * 10,
+					own ? 0xFFDBEEF8 : 0xFF7C93A3);
+
+		if (!t.obtain.isEmpty()) {
+			java.util.List<String> how = OrdealDraw.wrapPx(t.obtain, dw - 24, 2);
+			int hy = ly + viewH - 12 - how.size() * 10;
+			OrdealDraw.rect(g, dx + 12, hy - 8, dw - 24, 1, OrdealDraw.alpha(OrdealDraw.CYAN, 0x1E));
+			for (int i = 0; i < how.size(); i++)
+				OrdealDraw.text(g, how.get(i), dx + 12, hy + i * 10, 0xFFA9CDDD);
+		}
+	}
+
 	// ---- chi -----------------------------------------------------------------
 
 	private static void chi(GuiGraphics g, int x, int y, Snapshot s, int mx, int my) {
@@ -560,9 +752,9 @@ public class OrdealTerminalPainter {
 		double t = (System.currentTimeMillis() % 1000000L) / 1000.0;
 		float cxp = ax + areaW / 2f, cyp = ay + areaH / 2f + 4;
 		float maxR = Math.min(areaW, areaH) / 2f - 16;
-		float ringR = (float) (maxR * Math.sqrt(Math.max(1, s.chiLimit) / 150.0));
+		float ringR = (float) (maxR * Math.sqrt(Math.max(1, s.chiLimit) / Math.max(1, s.limitMax)));
 
-		ring(g, cxp, cyp, (float) (maxR * Math.sqrt(100 / 150.0)), 1f, 0x387ED8F5, 24, true);
+		ring(g, cxp, cyp, (float) (maxR * Math.sqrt(100 / Math.max(1, s.limitMax))), 1f, 0x387ED8F5, 24, true);
 		ring(g, cxp, cyp, maxR, 1f, 0x40FF8A2B, 24, true);
 		ring(g, cxp, cyp, ringR, 1.6f, 0xFF7ED8F5, 64, false);
 
@@ -613,11 +805,13 @@ public class OrdealTerminalPainter {
 
 		OrdealDraw.card(g, rx, y + 32, rw, 40, OrdealDraw.CYAN_FAINT);
 		OrdealDraw.text(g, "CHI LIMIT", rx + 6, y + 37, OrdealDraw.CYAN_DIM);
-		OrdealDraw.textRight(g, (int) s.chiLimit + " / 150", rx + rw - 6, y + 37, OrdealDraw.INK);
+		OrdealDraw.textRight(g, (int) s.chiLimit + " / " + (int) s.limitMax,
+				rx + rw - 6, y + 37, OrdealDraw.INK);
 		int bx2 = rx + 6, bw2 = rw - 12;
 		OrdealDraw.rect(g, bx2, y + 48, bw2, 8, 0x59000000);
-		OrdealDraw.rect(g, bx2, y + 48, (int) (bw2 * Math.min(1, s.chiLimit / 150.0)), 8, OrdealDraw.CYAN);
-		OrdealDraw.rect(g, bx2 + (int) (bw2 * (100 / 150.0)), y + 46, 1, 12, 0xE6FF8A2B);
+		OrdealDraw.rect(g, bx2, y + 48,
+				(int) (bw2 * Math.min(1, s.chiLimit / Math.max(1, s.limitMax))), 8, OrdealDraw.CYAN);
+		OrdealDraw.rect(g, bx2 + (int) (bw2 * (100 / Math.max(1, s.limitMax))), y + 46, 1, 12, 0xE6FF8A2B);
 		OrdealDraw.outline(g, bx2, y + 48, bw2, 8, OrdealDraw.alpha(OrdealDraw.CYAN, 0x47));
 		OrdealDraw.text(g, "NATURAL CAP 100", bx2, y + 60, AMBER_DIM);
 		OrdealDraw.textRight(g, "BLOOD CAP 150", bx2 + bw2, y + 60, 0xFF3C6478);
@@ -742,12 +936,14 @@ public class OrdealTerminalPainter {
 		if (isBasic) return;
 		boolean full = s.totalStrength >= s.chiLimit;
 		boolean maxed = s.activeStrength >= 150;
-		boolean can = s.talentSp > 0 && !full && !maxed;
+		boolean spentOut = s.tspCap > 0 && s.tspUsed >= s.tspCap;
+		boolean can = s.talentSp > 0 && !full && !maxed && !spentOut;
 		int bx = x + CONTENT_W - BTN_W, by = y + LEGEND_Y - 3;
 		boolean hov = OrdealDraw.inside(mx, my, bx, by, BTN_W, BTN_H);
 		int col = can ? (hov ? 0xFFFFD9A0 : 0xFFFFB877) : OrdealDraw.LOCKED;
 
 		String label = maxed ? "MAXED"
+				: spentOut ? "TSP SPENT"
 				: s.talentSp <= 0 ? "NO TALENT SP"
 				: full ? "AT CHI LIMIT"
 				: "+ STRENGTH";
@@ -798,11 +994,24 @@ public class OrdealTerminalPainter {
 
 			String status = r.id.equals("sense_filter")
 					? (net.mcreator.ordeal.OrdealSilhouette.SHOW_PRESENCE ? "ON" : "OFF")
+					: r.passive ? (r.unlocked ? (r.passiveOn ? "ON" : "OFF") : r.lockLabel)
 					: r.unlocked ? (isSel ? "SELECTED" : "READY") : r.lockLabel;
 			int col = r.id.equals("sense_filter")
 					? (net.mcreator.ordeal.OrdealSilhouette.SHOW_PRESENCE ? OrdealDraw.GREEN : OrdealDraw.INK_DIM)
+					: r.passive ? (r.unlocked && r.passiveOn ? OrdealDraw.GREEN : OrdealDraw.INK_DIM)
 					: isSel ? 0xFFFFB877 : r.unlocked ? OrdealDraw.GREEN : OrdealDraw.INK_DIM;
 			OrdealDraw.textRight(g, status, lx + listW - 6, ry + 4, col);
+
+			// The list is ordered by talent strength requirement, so show the
+			// requirement on EVERY row - it used to appear only while an ability
+			// was locked, which made the order look arbitrary the moment you
+			// could use something.
+			if (!r.id.equals("sense_filter") && r.req > 0 && r.unlocked) {
+				String tag = "T.STR " + r.req;
+				OrdealDraw.textRight(g, tag,
+						lx + listW - 10 - OrdealDraw.width(status), ry + 4,
+						r.unlocked ? 0xFF41677A : OrdealDraw.LOCKED);
+			}
 		}
 
 		g.disableScissor();
@@ -857,6 +1066,12 @@ public class OrdealTerminalPainter {
 
 	}
 
+	private static boolean selectedIsPassive(Snapshot s) {
+		for (Row r : s.abilities)
+			if (r.id.equals(s.selected)) return r.passive;
+		return false;
+	}
+
 	private static List<Component> tooltipFor(Row r, Snapshot s) {
 		List<Component> out = new ArrayList<>();
 		out.add(tint(r.name, r.accent).withStyle(ChatFormatting.BOLD));
@@ -868,20 +1083,53 @@ public class OrdealTerminalPainter {
 				out.add(tint(line, 0xFF9FB4C4).withStyle(ChatFormatting.ITALIC));
 		}
 
-		out.add(Component.empty());
-		out.add(stat("CHI COST", String.valueOf(
-				Math.round(r.chi * (1.0 - Math.min(0.40, s.chiControl * 0.004)))), 0xFF7ED8F5));
-		out.add(stat("COOLDOWN", String.format("%.1f",
-				(r.cdTicks / 20.0) * (1.0 - Math.min(0.35, s.agility * 0.0035))) + "s", 0xFF7ED8F5));
-		out.add(r.base == 0 && r.per == 0
-				? stat("DAMAGE", "-", 0xFF4B7D92)
-				: stat("DAMAGE", String.format("%.1f", r.base + r.per * r.scaleStat), 0xFFFF8A5B));
+		List<Component> nums = new ArrayList<>();
+		if (r.chi > 0)
+			nums.add(stat(r.passive ? "CHI PER USE" : "CHI COST", String.valueOf(
+					Math.round(r.chi * (1.0 - Math.min(0.40, s.chiControl * 0.004)))), 0xFF7ED8F5));
+		if (r.cdTicks > 0)
+			nums.add(stat("COOLDOWN", String.format("%.1f",
+					(r.cdTicks / 20.0) * (1.0 - Math.min(0.35, s.agility * 0.0035))) + "s", 0xFF7ED8F5));
+		if (r.base != 0 || r.per != 0)
+			nums.add(stat("DAMAGE", String.format("%.1f", r.base + r.per * r.scaleStat), 0xFFFF8A5B));
+		else if (!r.passive)
+			nums.add(stat("DAMAGE", "-", 0xFF4B7D92));
+		if (!nums.isEmpty()) {
+			out.add(Component.empty());
+			out.addAll(nums);
+		}
+
+		// Spell the gate out in full and say WHICH kind of requirement it is -
+		// a talent's strength and the STRENGTH stat are different numbers and
+		// "STR 2" could be either.
+		String requires = requirementText(r, s);
+		if (!requires.isEmpty()) {
+			out.add(Component.empty());
+			out.add(stat("REQUIRES", requires, r.unlocked ? 0xFF5FE3A0 : 0xFFFF6B6B));
+		}
 
 		out.add(Component.empty());
 		out.add(r.unlocked
-				? tint("> click to select", 0xFF5FE3A0)
+				? tint(r.passive ? (r.passiveOn ? "> click to turn OFF" : "> click to turn ON") : "> click to select", 0xFF5FE3A0)
 				: tint("locked - " + r.lockLabel, 0xFFFF6B6B));
 		return out;
+	}
+
+	/** "TALENT STRENGTH 2", or the physical stats a basic ability gates on. */
+	private static String requirementText(Row r, Snapshot s) {
+		StringBuilder b = new StringBuilder();
+		if (r.levelNeeded > 0) b.append("LEVEL ").append((int) r.levelNeeded);
+		if (r.req > 0) {
+			if (b.length() > 0) b.append("   ");
+			b.append("TALENT STRENGTH ").append(r.req);
+		}
+		if (!r.reqStats.isEmpty()) {
+			for (var e : r.reqStats.entrySet()) {
+				if (b.length() > 0) b.append("   ");
+				b.append(longStat(e.getKey())).append(' ').append((int) (double) e.getValue());
+			}
+		}
+		return b.toString();
 	}
 
 	private static MutableComponent tint(String text, int rgb) {
@@ -921,11 +1169,14 @@ public class OrdealTerminalPainter {
 
 	public static class Row {
 		public String id, icon, name, kind, desc = "", lockLabel = "";
+		public boolean passive, passiveOn;
 		public net.minecraft.resources.ResourceLocation iconTex;
 		public boolean unlocked;
 		public int req, accent;
 		public double chi, cdTicks, base, per, scaleStat;
 		public int levelNeeded;
+		/** Physical stat gates, for the basic abilities. Empty for talent ones. */
+		public java.util.Map<String, Double> reqStats = new java.util.LinkedHashMap<>();
 	}
 
 	private static double statByName(Snapshot s, String name) {
@@ -938,6 +1189,19 @@ public class OrdealTerminalPainter {
 			case "chicontrol": return s.stats[5];
 			case "perception": return s.stats[6];
 			default: return 0;
+		}
+	}
+
+	private static String longStat(String name) {
+		switch (name.toLowerCase()) {
+			case "strength": return "STRENGTH";
+			case "durability": return "DURABILITY";
+			case "agility": return "AGILITY";
+			case "health": return "HEALTH";
+			case "chi": return "CHI";
+			case "chicontrol": return "CHI CONTROL";
+			case "perception": return "PERCEPTION";
+			default: return name.toUpperCase();
 		}
 	}
 
@@ -957,6 +1221,7 @@ public class OrdealTerminalPainter {
 	public static class Snapshot {
 		public String playerName = "", family = "-", clan = "-", selected = "", selectedName = "", talentSummary = "";
 		public double level, xp, xpCap, sp, spUsed, spCap, talentSp, tspUsed, tspCap, chiLimit, chiControl, agility;
+		public double limitMax = OrdealStats.LIMIT_MAX;
 		public double conceal, chiPct, chiMaxFull, nextSp, nextTsp;
 		public String talentShort = "NONE", talentBrief = "";
 		public int talentAccent = OrdealDraw.CYAN;
@@ -969,6 +1234,10 @@ public class OrdealTerminalPainter {
 		public String[] talentNames = new String[0];
 		public String[] loadout = new String[10];
 		public List<OrdealTalents.Talent> tabs = new ArrayList<>();
+		/** Every trait in the mod, the ones you hold sorted to the front. */
+		public List<OrdealTraits.Trait> traits = new ArrayList<>();
+		public boolean[] traitOwned = new boolean[0];
+		public int traitsOwned = 0;
 		public int[] tabSlot = new int[0];
 		public List<Row> abilities = new ArrayList<>();
 
@@ -978,6 +1247,19 @@ public class OrdealTerminalPainter {
 
 			Snapshot s = new Snapshot();
 			s.playerName = player.getGameProfile().getName();
+
+			// traits: complete list, acquired first, then by name
+			List<OrdealTraits.Trait> tl = new ArrayList<>(OrdealTraits.all());
+			tl.sort(java.util.Comparator
+					.comparing((OrdealTraits.Trait t) -> OrdealTraits.has(v, t) ? 0 : 1)
+					.thenComparing(t -> t.name));
+			s.traits = tl;
+			s.traitOwned = new boolean[tl.size()];
+			for (int i = 0; i < tl.size(); i++) {
+				s.traitOwned[i] = OrdealTraits.has(v, tl.get(i));
+				if (s.traitOwned[i]) s.traitsOwned++;
+			}
+
 			s.level      = v.level;
 			s.xp         = v.xp;
 			s.xpCap      = v.xpCap;
@@ -994,6 +1276,7 @@ public class OrdealTerminalPainter {
 			s.chiPct     = Math.round(100.0 * v.chi / Math.max(1, v.chiMax));
 			s.talentSp   = v.talentSP;
 			s.chiLimit   = v.chiLimit;
+			s.limitMax   = Math.max(OrdealStats.LIMIT_MAX, v.chiLimit);
 			s.chiControl = v.statChiControl;
 			s.agility    = v.statAgility;
 			s.bloodDoses = (int) v.bloodConsumed;
@@ -1022,6 +1305,11 @@ public class OrdealTerminalPainter {
 			// Basic always leads.
 			List<Integer> slots = new ArrayList<>();
 			s.tabs.add(OrdealTalents.basic()); slots.add(0);
+
+			OrdealTalents.Talent enh = OrdealTalents.get(ENHANCEMENT_TAB);
+			// The whole tab stays hidden until an enhancement is actually bonded.
+			if (enh != null && !enh.abilities.isEmpty()
+					&& net.mcreator.ordeal.Enhancements.any(player)) { s.tabs.add(enh); slots.add(-1); }
 
 			List<String> names = new ArrayList<>();
 			List<Double> strs = new ArrayList<>();
@@ -1061,7 +1349,8 @@ public class OrdealTerminalPainter {
 			OrdealTalents.Talent active = s.tabs.get(tab);
 			s.activeSlot = s.tabSlot[tab];
 			s.activeStrength = s.activeSlot == 1 ? v.talent1_strength
-					: s.activeSlot == 2 ? v.talent2_strength : 0;
+					: s.activeSlot == 2 ? v.talent2_strength
+					: s.activeSlot == -1 ? Math.max(v.talent1_strength, v.talent2_strength) : 0;
 
 			if (active.id.equals("basic")) {
 				// free utility, always first: toggles seeing presence glow
@@ -1072,29 +1361,51 @@ public class OrdealTerminalPainter {
 				s.abilities.add(sf);
 			}
 			for (OrdealTalents.Ability a : active.abilities) {
+				// Enhancements are earned, not advertised: an enhancement row
+				// only exists once the player is actually bonded to it. This
+				// filters them out of EVERY tab they might be listed in.
+				if (net.mcreator.ordeal.Enhancements.valid(a.id)
+						&& !net.mcreator.ordeal.Enhancements.has(player, a.id)) continue;
 				Row r = new Row();
 				r.id = a.id; r.icon = a.icon; r.name = a.name; r.kind = a.kind; r.desc = a.desc; r.iconTex = a.iconTex;
 				r.req = a.req;
+				r.reqStats.putAll(a.reqStats);
 				r.chi = a.chi; r.cdTicks = a.cdTicks; r.base = a.base; r.per = a.per;
 				r.levelNeeded = a.levelNeeded;
 				r.accent = active.accent;
+				r.passive = (a.kind != null && a.kind.toUpperCase(java.util.Locale.ROOT).contains("PASSIVE"))
+						|| net.mcreator.ordeal.Enhancements.valid(a.id);
+				r.passiveOn = net.mcreator.ordeal.Passives.onClient(a.id);
+				// Stat requirements gate EVERY ability, not just the basic
+				// talent's. This check used to live inside the basic branch
+				// only, so a talent ability printed "AGILITY 8" in its REQUIRES
+				// line, coloured it green and offered "click to select" while
+				// your agility sat at 0 - the requirement was displayed and
+				// never enforced.
+				StringBuilder missing = new StringBuilder();
+				boolean statsOk = true;
+				for (var e : a.reqStats.entrySet()) {
+					if (statByName(s, e.getKey()) >= e.getValue()) continue;
+					statsOk = false;
+					if (missing.length() > 0) missing.append("  ");
+					missing.append(shortStat(e.getKey())).append(' ')
+							.append((int) (double) e.getValue());
+				}
+
 				if (active.id.equals("basic")) {
-					StringBuilder missing = new StringBuilder();
-					boolean ok = true;
-					for (var e : a.reqStats.entrySet()) {
-						if (statByName(s, e.getKey()) >= e.getValue()) continue;
-						ok = false;
-						if (missing.length() > 0) missing.append("  ");
-						missing.append(shortStat(e.getKey())).append(' ')
-								.append((int) (double) e.getValue());
-					}
-					r.unlocked = ok;
+					r.unlocked = statsOk;
 					r.lockLabel = missing.toString();
 					r.scaleStat = v.statStrength;
 				} else {
 					boolean lvlOk = v.level >= a.levelNeeded;
-					r.unlocked = s.activeStrength >= a.req && lvlOk;
-					r.lockLabel = !lvlOk ? "LVL " + a.levelNeeded : "STR " + a.req;
+					boolean strOk = s.activeStrength >= a.req;
+					r.unlocked = strOk && lvlOk && statsOk;
+					// Report the first gate you fail, in the order you would
+					// clear them. "STR" alone reads as the STRENGTH stat, so the
+					// talent's own strength is spelled T.STR.
+					r.lockLabel = !lvlOk ? "LVL " + a.levelNeeded
+							: !strOk ? "T.STR " + a.req
+							: missing.toString();
 					r.scaleStat = s.activeStrength;
 				}
 				s.abilities.add(r);

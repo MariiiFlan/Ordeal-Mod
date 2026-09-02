@@ -55,6 +55,51 @@ public class OrdealCommands {
 					.then(stat("perception", 100))))
 
 			.then(Commands.literal("talents")
+				.then(Commands.literal("enhancement")
+					.then(Commands.literal("open").executes(c -> {
+						ServerPlayer p = self(c);
+						if (p != null) net.mcreator.ordeal.EnhancementPayload.openFor(p);
+						return 1;
+					}))
+					.then(Commands.literal("clear").executes(c -> {
+						ServerPlayer p = self(c);
+						if (p != null) net.mcreator.ordeal.Enhancements.clear(p);
+						return 1;
+					}))
+					.then(Commands.argument("which", StringArgumentType.word()).executes(c -> {
+						ServerPlayer p = self(c);
+						if (p == null) return 0;
+						return net.mcreator.ordeal.Enhancements.pick(p,
+								StringArgumentType.getString(c, "which")) ? 1 : 0;
+					})))
+				.then(Commands.literal("state")
+					.then(Commands.literal("clear").executes(c -> {
+						ServerPlayer p = self(c);
+						if (p == null) return 0;
+						net.mcreator.ordeal.StageLadder.exit(p);
+						net.mcreator.ordeal.StageLadder.clearVariant(p);
+						say(c, p, "ilios state reset - the pick will ask again");
+						return 1;
+					}))
+					.then(Commands.literal("open").executes(c -> {
+						ServerPlayer p = self(c);
+						if (p == null) return 0;
+						net.mcreator.ordeal.StageLadder.clearVariant(p);
+						net.mcreator.ordeal.IliosStatePayload.openFor(p);
+						return 1;
+					}))
+					.then(Commands.literal("leo").executes(c -> setVariant(c, "leo")))
+					.then(Commands.literal("che").executes(c -> setVariant(c, "che")))
+					.then(Commands.literal("stage")
+						.then(Commands.argument("n", IntegerArgumentType.integer(0, 4))
+							.executes(c -> {
+								ServerPlayer p = self(c);
+								if (p == null) return 0;
+								int n = IntegerArgumentType.getInteger(c, "n");
+								net.mcreator.ordeal.StageLadder.force(p, n);
+								say(c, p, "ilios state stage " + n);
+								return 1;
+							}))))
 				.then(Commands.literal("set")
 					.then(talentSet("talent1", 1))
 					.then(talentSet("talent2", 2)))
@@ -99,6 +144,32 @@ public class OrdealCommands {
 					.executes(c -> race(c, self(c)))
 					.then(Commands.argument("target", EntityArgument.player())
 						.executes(c -> race(c, target(c))))))
+
+			.then(Commands.literal("debug")
+				.executes(c -> {
+					ServerPlayer p = self(c);
+					if (p != null) net.mcreator.ordeal.OrdealDebugPayload.toggle(p);
+					return 1;
+				})
+				// /ordealadmin debug flight  -> only that section
+				// /ordealadmin debug all     -> everything again
+				.then(Commands.argument("section", StringArgumentType.word()).executes(c -> {
+					ServerPlayer p = self(c);
+					if (p == null) return 0;
+					String sec = StringArgumentType.getString(c, "section");
+					net.mcreator.ordeal.OrdealDebugPayload.filter(p,
+							"all".equalsIgnoreCase(sec) ? "" : sec);
+					return 1;
+				}))
+				.then(Commands.literal("scale")
+					.then(Commands.argument("pct", IntegerArgumentType.integer(25, 150))
+						.executes(c -> {
+							ServerPlayer p = self(c);
+							if (p == null) return 0;
+							net.mcreator.ordeal.OrdealDebugPayload.scale(p,
+									IntegerArgumentType.getInteger(c, "pct") / 100f);
+							return 1;
+						}))))
 
 			.then(Commands.literal("wipe")
 				.executes(c -> wipe(c, self(c)))
@@ -267,6 +338,15 @@ public class OrdealCommands {
 		return 1;
 	}
 
+	private static int setVariant(CommandContext<CommandSourceStack> c, String which) {
+		ServerPlayer p = self(c);
+		if (p == null) return 0;
+		net.mcreator.ordeal.StageLadder.clearVariant(p);
+		net.mcreator.ordeal.StageLadder.setVariant(p, which);
+		say(c, p, "ilios state variant = " + which);
+		return 1;
+	}
+
 	private static int wipe(CommandContext<CommandSourceStack> c, ServerPlayer p) {
 		if (p == null) return 0;
 		OrdealModVariables.PlayerVariables v = vars(p);
@@ -281,10 +361,44 @@ public class OrdealCommands {
 		v.spawnRandom = 0;
 		v.loadout_1 = ""; v.loadout_2 = ""; v.loadout_3 = ""; v.loadout_4 = ""; v.loadout_5 = "";
 		v.loadout_6 = ""; v.loadout_7 = ""; v.loadout_8 = ""; v.loadout_9 = ""; v.loadout_10 = "";
-		recalcChiLimit(v);
+
+		v.spLifetime_Cap = 450.0;
+		v.talentSp_Lifetime_Cap = 150.0;
+		v.ownedBasics = "";
+		v.ability_Row = 1.0;
+		v.race = "human";
+		v.chi = 0; v.chiMax = 0; v.chiCharging = 0; v.ChiConcealed = 0;
+		v.talent1_Chi = 0; v.talent2_Chi = 0;
+		v.talent1_chiBase = 0; v.talent2_chiBase = 0;
+		v.talent1_ChiMax = 0; v.talent2_ChiMax = 0;
+		v.guard = 0; v.guardMax = 0; v.guardRegenTick = 0;
+		v.damage = 0; v.knockback = 0; v.damageReduction = 0; v.attackPower = 0;
+		v.talentState = 1.0; v.chargePower = 1.0;
+		v.abilityName = "";
+		v.inCombatWith = "none";
+
+		v.flightOn = false; v.flightIdle = false; v.flightBoost = false;
+		v.flightThrottle = 0; v.flightSpeed = 0;
+
 		v.markSyncDirty();
+		net.mcreator.ordeal.Enhancements.clear(p);
+		// the ladder and flight keep live maps that the nbt wipe cannot reach
+		net.mcreator.ordeal.StageLadder.exit(p);
+		net.mcreator.ordeal.StageLadder.clearVariant(p);
+		net.mcreator.ordeal.Flight.clearAll(p);
+		net.mcreator.ordeal.TalentState.clear(p, "ilios_state");
+		wipeOrdealData(p);
+		recalcChiLimit(v);
 		say(c, p, "wiped");
 		return 1;
+	}
+
+	private static void wipeOrdealData(ServerPlayer p) {
+		net.minecraft.nbt.CompoundTag data = p.getPersistentData();
+		for (String key : new java.util.ArrayList<>(data.getAllKeys()))
+			if (key.startsWith("ordeal_")) data.remove(key);
+		// net.mcreator.ordeal.TalentState.clearAll(p);
+		net.mcreator.ordeal.EnhancementPayload.sync(p);
 	}
 
 	// ---- helpers ------------------------------------------------------------

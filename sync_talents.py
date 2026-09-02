@@ -7,6 +7,11 @@ you type into blocks are the real ones and the JSON is only a copy. This reads
 the generated Java back out and writes those numbers into the JSON, so the
 terminal tooltip can never disagree with what the ability actually does.
 
+It reports what it CANNOT read, too. A local that is declared but never
+assigned used to be skipped silently, which looks exactly like "already in
+sync" - the JSON kept a stale number and the watcher printed "up to date"
+anyway. Those now print as PROBLEMS and the watcher refuses to call it synced.
+
 It only ever touches the fields it can read. Descriptions, icons, kinds, hold
 blocks, ability order and anything else you wrote by hand are left alone.
 
@@ -34,25 +39,76 @@ FIELDS = [
     ("cooldownTicks",    "cooldownTicks", "num"),
     ("BaseDMG",          "baseDmg",       "num"),
     ("ExtraDMG",         "extraDmg",      "num"),
+    ("pays",             "pays",          "num"),
 ]
 
 # Optional locals. Add any of these to a procedure and the script carries it
 # into the hold block; leave one out and whatever is in the json stays.
 HOLD_NUMS = [
+    # Bare aliases first, so an explicit hold-prefixed local always wins if you
+    # somehow set both. These exist because every procedure already declares a
+    # plain chiPerTick and it read as doing nothing.
+    ("chiPerTick",          ("chiPerTick",)),
     ("holdLevels",          ("levels",)),
     ("holdSecondsPerLevel", ("secondsPerLevel",)),
     ("holdChiPerTick",      ("chiPerTick",)),
-    ("holdChiPerSecond",    ("chiPerSecond",)),
     ("holdChiControlMax",   ("chiControlMax",)),
     ("holdTickEvery",       ("tickEvery",)),
     ("holdMaxSeconds",      ("maxSeconds",)),
     ("holdMinLevel",        ("minLevel",)),
     ("holdGraceTicks",      ("graceTicks",)),
+    ("movementStunTicks",   ("stunTicks",)),
     ("holdPowerMin",        ("power", "min")),
     ("holdPowerMax",        ("power", "max")),
 ]
 
-MODES = {1: "charge", 2: "channel", 3: "toggle"}
+# Text locals that ride into the hold block.
+#   ThirdPersonAni - a Player Animation API name, broadcast to everyone
+#   FirstPersonAni - a COMMAND run as you, e.g. "ordealanimations play @s x"
+# Logic locals that ride into the hold block.
+HOLD_BOOLS = [
+    ("movementStunWhileHold", "stunWhileHold"),
+]
+
+HOLD_STRINGS = [
+    ("ThirdPersonAni", "anim3p"),
+    ("FirstPersonAni", "anim1p"),
+]
+
+MODES = {1: "charge", 2: "channel", 3: "toggle", 4: "ramp"}
+
+# A talent_id on the left is written into the json on the right. Use this when a
+# group of abilities belongs to no single talent - "enhancement" is not a talent
+# anyone holds, so its abilities live in basic.json where every player sees them.
+TALENT_ALIASES = {
+    "enhancement":  "basic",
+    "enhancements": "basic",
+}
+
+# The projectile block, from the procedure's own locals. Written only while the
+# Projectile switch is on; turning it off removes the block.
+#   java name          json key
+PROJ_NUMS = [
+    ("ProjectileSpeed", "speed"),
+    ("Gravity",         "gravity"),
+    ("LifeTicks",       "lifeTicks"),
+    ("Pierce",          "pierce"),
+    ("ExplodeRadius",   "radius"),
+    ("Homing",          "homing"),
+    ("HomingRange",     "homingRange"),
+    ("IgniteSeconds",   "igniteSeconds"),
+]
+
+PROJ_BOOLS = [
+    ("ExplodeOnImpact", "explodeOnImpact"),
+]
+
+PROJ_STRINGS = [
+    ("ExploVFX",  "explodeFx"),
+    ("TrailVFX",  "trailFx"),
+    ("ImpactVFX", "impactFx"),
+    ("HitSound",  "hitSound"),
+]
 
 # What a brand new hold block looks like, per mode. Only used when the json
 # has none - an existing block keeps every number you tuned by hand.
@@ -63,10 +119,18 @@ DEFAULTS = {
         ("power", collections.OrderedDict([("min", 1.0), ("max", 2.2)])),
     ]),
     "channel": collections.OrderedDict([
-        ("mode", "channel"), ("maxSeconds", 3.0), ("chiPerSecond", 5), ("tickEvery", 4),
+        ("mode", "channel"), ("maxSeconds", 3.0), ("chiPerTick", 0.25), ("tickEvery", 4),
     ]),
     "toggle": collections.OrderedDict([
         ("mode", "toggle"), ("chiPerTick", 0.3), ("tickEvery", 20), ("maxSeconds", 30.0),
+    ]),
+    # a channel that climbs: pulse timing from the channel, power curve from
+    # the charge. maxSeconds is the whole hold, levels * secondsPerLevel is how
+    # long it takes to reach full power inside it.
+    "ramp": collections.OrderedDict([
+        ("mode", "ramp"), ("maxSeconds", 3.0), ("chiPerTick", 0.25), ("tickEvery", 4),
+        ("levels", 5), ("secondsPerLevel", 0.5), ("chiControlMax", 0.7),
+        ("power", collections.OrderedDict([("min", 1.0), ("max", 2.2)])),
     ]),
 }
 
@@ -74,6 +138,7 @@ REQ_STATS = [
     ("reqStat_Str",        "strength"),
     ("reqStat_Dura",      "durability"),
     ("reqStat_Agil",      "agility"),
+    ("reqStat_Health",    "health"),
     ("reqStat_perception", "perception"),
     ("reqStat_Chi",       "chi"),
     ("reqStat_ChiControl", "chiControl"),
@@ -136,6 +201,64 @@ def ability_name(src, path):
     return re.sub(r"(?<!^)(?=[A-Z])", " ", stem)
 
 
+# Locals that are FILLED IN from the player, never typed. A literal assignment
+# to one of these is the wrong-block mistake: you meant the requirement next to
+# it, the real value gets clobbered, and the gate it feeds stops meaning
+# anything. This is the single most expensive silent bug in the setup.
+READONLY_LOCALS = {
+    "talent_Str": "Talent_STR_Req",
+}
+
+
+def defines_ability(src):
+    """
+    Is this the procedure that DEFINES an ability, or a helper built from the
+    same template?
+
+    MCreator's template declares the whole block of locals in every procedure
+    made from it, so Akonito1/2/3 and the OnTick handlers all declare Chi_Cost
+    and BaseDMG without ever meaning to own them. Warning about those buries
+    the one finding that matters.
+
+    Setting abilityName is the marker, and it splits cleanly: every "0"
+    procedure sets it, no helper does.
+    """
+    return re.search(r'\.abilityName\s*=\s*"', src) is not None
+
+
+# levelNeeded is opt-in: almost nothing gates on player level, so "declared and
+# never set" is the normal case for it, not a fault.
+OPTIONAL_FIELDS = {"levelneeded"}
+
+
+def checks(src, path):
+    """
+    Only things that are actually wrong. Silence has to mean correct, but so
+    does a warning have to mean broken - a checker that cries about every
+    procedure is the same as one that says nothing.
+    """
+    out = []
+    name = os.path.basename(path)
+
+    for local, meant in READONLY_LOCALS.items():
+        for v in assignments(src, local):
+            if first_number(v) is not None and not re.search(r"[A-Za-z_]", v):
+                out.append(f"    {local} = {v}  <- {local} holds YOUR ACTUAL talent "
+                           f"strength, read from the player. Setting it to a literal "
+                           f"overwrites that, so the '{local} >= {meant}' gate always "
+                           f"passes. You meant {meant} = {v}.")
+
+    if defines_ability(src):
+        for java, key, _kind in FIELDS:
+            if java in OPTIONAL_FIELDS:
+                continue
+            declared = re.search(r"(?:^|\n)\s*" + TYPES + r"\s+" + re.escape(java) + r"\s*=", src)
+            if declared and not assignments(src, java):
+                out.append(f"    {java} never set - {key} in the json keeps its old value")
+
+    return [f"  {name}"] + out if out else []
+
+
 def scrape(path):
     src = open(path, encoding="utf-8", errors="replace").read()
     if "talent_id" not in src:
@@ -153,7 +276,13 @@ def scrape(path):
         "_legacyHold": read_bool(src, "chargeable"),
         "_fireOnPress": read_bool(src, "fireonpress"),
         "_mode": None,
+        "_projectile": read_bool(src, "Projectile"),
         "holdNums": collections.OrderedDict(),
+        "holdStrings": collections.OrderedDict(),
+        "holdBools": collections.OrderedDict(),
+        "projNums": collections.OrderedDict(),
+        "projBools": collections.OrderedDict(),
+        "projStrings": collections.OrderedDict(),
         "values": collections.OrderedDict(),
         "reqStats": collections.OrderedDict(),
     }
@@ -178,16 +307,60 @@ def scrape(path):
         if not vals:
             continue
         n = first_number(vals[-1])
-        if n is not None:
-            out["holdNums"][path] = int(n) if n == int(n) else n
+        if n is None:
+            continue
+        # The bare chiPerTick only counts when it is above zero. Every procedure
+        # declares it and resets it to 0 in its defaults block, so honouring that
+        # zero would quietly wipe the drain off every charge in the mod. Write
+        # holdChiPerTick explicitly if you mean free.
+        if java == "chiPerTick" and n == 0:
+            continue
+        out["holdNums"][path] = int(n) if n == int(n) else n
+
+    for java, key in HOLD_BOOLS:
+        b = read_bool(src, java)
+        if b is not None:
+            out["holdBools"][key] = b
+
+    for java, key in HOLD_STRINGS:
+        v = read_string(src, java)
+        if v is not None:
+            out["holdStrings"][key] = v
+
+    for java, key in PROJ_NUMS:
+        vals = assignments(src, java)
+        if not vals:
+            continue
+        n = first_number(vals[-1])
+        if n is None:
+            continue
+        # A projectile with speed 0 never leaves your hand, so that is a local
+        # nobody set rather than a value anybody meant. Everything else can
+        # legitimately be zero - no homing, no ignite, no blast radius.
+        if key == "speed" and n <= 0:
+            continue
+        out["projNums"][key] = int(n) if n == int(n) else n
+
+    for java, key in PROJ_BOOLS:
+        b = read_bool(src, java)
+        if b is not None:
+            out["projBools"][key] = b
+
+    for java, key in PROJ_STRINGS:
+        v = read_string(src, java)
+        if v is not None:
+            out["projStrings"][key] = v
 
     for java, key in REQ_STATS:
         vals = assignments(src, java)
         if not vals:
             continue
         n = first_number(vals[-1])
-        if n:                              # only carry a requirement that exists
-            out["reqStats"][key] = int(n) if n == int(n) else n
+        if n is None:
+            continue
+        # zeros are carried too - a requirement you set back to 0 has to be able
+        # to leave the json, and it used to stay there for ever
+        out["reqStats"][key] = int(n) if n == int(n) else n
 
     return out
 
@@ -210,7 +383,7 @@ def sync_hold(scraped, ab, notes):
     The hold block, from the procedure's own switches:
 
         hold        true/false  - is this a held ability at all
-        mode        1/2/3       - charge / channel / toggle
+        mode        1/2/3/4     - charge / channel / toggle / ramp
         fireonpress true/false  - charge only
 
     Turning hold off removes the block, and the removed block is printed so a
@@ -268,6 +441,72 @@ def sync_hold(scraped, ab, notes):
                 sub[path[1]] = val
                 changed = True
 
+    for key, val in scraped["holdBools"].items():
+        if cur.get(key, False) != val:
+            notes.append(f"    hold.{key}: {cur.get(key, False)} -> {val}")
+            if val:
+                cur[key] = val
+            else:
+                cur.pop(key, None)
+            changed = True
+
+    for key, val in scraped["holdStrings"].items():
+        if cur.get(key, "") != val:
+            notes.append(f"    hold.{key}: {cur.get(key, '')!r} -> {val!r}")
+            if val:
+                cur[key] = val
+            else:
+                cur.pop(key, None)
+            changed = True
+
+    # chiPerTick is the only drain unit there is. Any chiPerSecond left over
+    # from an older json is removed on sight so a block can never carry two.
+    if "chiPerSecond" in cur:
+        notes.append(f"    hold.chiPerSecond removed ({cur['chiPerSecond']}) - chiPerTick is the only unit")
+        cur.pop("chiPerSecond", None)
+        changed = True
+
+    return changed
+
+
+def sync_projectile(scraped, ab, notes):
+    """
+    The projectile block, gated on the procedure's Projectile switch.
+
+        Projectile  true/false  - does this ability fire one at all
+
+    True writes the block and keeps every projectile local in step with it.
+    False removes the block, and prints what was removed so a tuning you spent
+    time on is never lost silently. A local the procedure does not set is left
+    alone, so anything you added to the json by hand survives.
+    """
+    want = scraped["_projectile"]
+    if want is None:
+        return False                       # procedure says nothing - leave it
+
+    cur = ab.get("projectile") if isinstance(ab.get("projectile"), dict) else None
+
+    if not want:
+        if cur is None:
+            return False
+        ab.pop("projectile", None)
+        notes.append("    projectile removed (Projectile = false). was: " + json.dumps(cur))
+        return True
+
+    changed = False
+    if cur is None:
+        cur = collections.OrderedDict()
+        ab["projectile"] = cur
+        notes.append("    projectile added")
+        changed = True
+
+    for src in (scraped["projNums"], scraped["projBools"], scraped["projStrings"]):
+        for key, val in src.items():
+            if cur.get(key) != val:
+                notes.append(f"    projectile.{key}: {cur.get(key)} -> {val}")
+                cur[key] = val
+                changed = True
+
     return changed
 
 
@@ -312,7 +551,10 @@ def new_ability(name):
 
 
 def sync_one(scraped, talents_dir, dry):
-    path = os.path.join(talents_dir, scraped["_talent"] + ".json")
+    talent_id = TALENT_ALIASES.get(scraped["_talent"].lower(), scraped["_talent"])
+    scraped = dict(scraped)
+    scraped["_talent"] = talent_id
+    path = os.path.join(talents_dir, talent_id + ".json")
     notes = []
     changed = False
 
@@ -342,14 +584,37 @@ def sync_one(scraped, talents_dir, dry):
     if scraped["reqStats"]:
         cur = ab.get("reqStats") or collections.OrderedDict()
         for key, val in scraped["reqStats"].items():
-            if cur.get(key) != val:
-                cur[key] = val
+            if val:
+                if cur.get(key) != val:
+                    notes.append(f"    reqStats.{key}: {cur.get(key)} -> {val}")
+                    cur[key] = val
+                    changed = True
+            elif key in cur:
+                notes.append(f"    reqStats.{key} removed (set back to 0)")
+                cur.pop(key, None)
                 changed = True
-                notes.append(f"    reqStats.{key}: {ab.get('reqStats', {}).get(key)} -> {val}")
-        if changed:
+        if cur:
             ab["reqStats"] = cur
+        elif "reqStats" in ab:
+            ab.pop("reqStats", None)
+            changed = True
+
+    stun = scraped["holdNums"].get(("stunTicks",))
+    want_hold = scraped["_hold"] if scraped["_hold"] is not None else scraped["_legacyHold"]
+    if stun is not None and not want_hold:
+        scraped["holdNums"].pop(("stunTicks",), None)
+        if stun:
+            if ab.get("stunTicks") != stun:
+                notes.append(f"    stunTicks: {ab.get('stunTicks')} -> {stun}")
+                ab["stunTicks"] = stun
+                changed = True
+        elif "stunTicks" in ab:
+            notes.append("    stunTicks removed (set back to 0)")
+            ab.pop("stunTicks", None)
+            changed = True
 
     changed |= sync_hold(scraped, ab, notes)
+    changed |= sync_projectile(scraped, ab, notes)
 
     if changed and not dry:
         os.makedirs(talents_dir, exist_ok=True)
@@ -374,17 +639,29 @@ def run(root, dry):
         return 1
 
     lines = []
+    problems = []
     for f in sorted(os.listdir(proc)):
         if not f.endswith("Procedure.java"):
             continue
-        s = scrape(os.path.join(proc, f))
+        full = os.path.join(proc, f)
+        src = open(full, encoding="utf-8", errors="replace").read()
+        if "talent_id" in src:
+            problems += checks(src, full)
+        s = scrape(full)
         if s and (s["values"] or s["_hold"] is not None):
             lines += sync_one(s, talents, dry)
 
     if lines:
         print(("would change" if dry else "synced") + ":")
         print("\n".join(lines))
-    return 0
+
+    # Warnings print whether or not anything synced. A procedure the script
+    # cannot read is exactly the case that used to look identical to success.
+    if problems:
+        print("PROBLEMS - these are why a number you typed is not in the json:")
+        print("\n".join(problems))
+
+    return 2 if problems else 0
 
 
 def stamp(root):
@@ -421,8 +698,12 @@ def main():
             now = stamp(root)
             if now > last:
                 last = now
-                if run(root, a.dry) == 0:
+                code = run(root, a.dry)
+                if code == 0:
                     print(time.strftime("  [%H:%M:%S] up to date"))
+                else:
+                    # never print "up to date" over an unreadable procedure
+                    print(time.strftime("  [%H:%M:%S] NOT synced - see above"))
             time.sleep(a.every)
         except KeyboardInterrupt:
             print("\nstopped")

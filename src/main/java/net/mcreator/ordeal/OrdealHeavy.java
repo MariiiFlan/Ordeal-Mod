@@ -22,15 +22,14 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.mcreator.ordeal.network.OrdealModVariables;
-
 
 public final class OrdealHeavy {
 
 	private OrdealHeavy() {}
 
-	// ---- TUNING -------------------------------------------------------------
 	public static final boolean REQUIRE_COMBAT_MODE = true;
 	public static int COOLDOWN_TICKS = OrdealTuning.i("heavy.cooldown_ticks", 50);
 	public static double CHI_COST = OrdealTuning.d("heavy.chi_cost", 8);
@@ -39,21 +38,37 @@ public final class OrdealHeavy {
 	public static double KB_PER_STR = OrdealTuning.d("heavy.kb_per_str", 0.06);
 	public static int WINDUP_TICKS = OrdealTuning.i("heavy.windup_ticks", 4);
 
-	// ---- IMPACT FRAMES (Darkness Core) --------------------------------------
 	public static final String[] IMPACT_FRAMES = {
 			"darknesscore shader play @s 1 zoomblur0 1 blackwhite_ipf0 1 blackwhite_ipf1 2 shake 50 6",
 			"darknesscore shader play @s 1 red_zoom 1 blackwhite_red_ipf0 1 blackwhite_red_ipf1 2 shake 50 5",
 	};
 	public static double IMPACT_CHANCE = OrdealTuning.d("heavy.impact_frame_chance", 0.35);
 
-	// ---- HEAVY ANIMATIONS ---------------------------------------------------
-	// Same idea: animator clip names, one picked at random per punch.
-	// Make clips in the animator and list them here.
 	public static final String[] HEAVY_ANIMS = { "heavy_punch" };
 
 	private static final String CD_KEY = "ordeal_heavy_cd";
 
-	// ---- server -------------------------------------------------------------
+	public static final java.util.Set<String> USE_EXEMPT =
+						new java.util.HashSet<>(java.util.Arrays.asList("akontio", "ilios_claymore"));
+
+	public static boolean keepsOwnUse(net.minecraft.world.item.ItemStack st) {
+		if (st == null || st.isEmpty()) return false;
+		var id = BuiltInRegistries.ITEM.getKey(st.getItem());
+		return id != null && "ordeal".equals(id.getNamespace()) && USE_EXEMPT.contains(id.getPath());
+	}
+
+	@EventBusSubscriber(modid = "ordeal")
+	public static final class Use {
+		@SubscribeEvent
+		public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
+			if (event.getLevel().isClientSide()) return;
+			if (!keepsOwnUse(event.getItemStack())) return;
+			var id = BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem());
+			if (AbilityHold.once(event.getEntity(), "use_" + (id == null ? "x" : id.getPath()), 2)) return;
+			event.setCanceled(true);
+			event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+		}
+	}
 
 	public static void execute(ServerPlayer p) {
 		OrdealModVariables.PlayerVariables v = p.getData(OrdealModVariables.PLAYER_VARIABLES);
@@ -97,8 +112,9 @@ public final class OrdealHeavy {
 
 		if (target == null || !target.isAlive()) return;
 
-		// runs through the full guard pipeline: gate, guard, combo, numbers
 		double dmg = p.getAttributeValue(Attributes.ATTACK_DAMAGE) * DAMAGE_MULT;
+
+		net.mcreator.ordeal.core.OrdealChiRefund.markHeavy(p);
 		target.hurt(p.damageSources().playerAttack(p), (float) dmg);
 
 		double dur = target instanceof Player tp
@@ -111,7 +127,6 @@ public final class OrdealHeavy {
 		target.hurtMarked = true;
 		shake(target, 2, 10);
 
-		// the shockwave shoves whoever was standing next to them
 		for (LivingEntity near : level.getEntitiesOfClass(LivingEntity.class,
 				target.getBoundingBox().inflate(2.5), e -> e != p && e != target && e.isPickable())) {
 			Vec3 away = near.position().subtract(target.position()).normalize();
@@ -124,7 +139,6 @@ public final class OrdealHeavy {
 			impactFrame(p);
 	}
 
-	/** Runs one random Darkness Core shader sequence as the attacker. */
 	private static void impactFrame(ServerPlayer p) {
 		if (p.getServer() == null) return;
 		String cmd = IMPACT_FRAMES[p.getRandom().nextInt(IMPACT_FRAMES.length)];
@@ -160,18 +174,17 @@ public final class OrdealHeavy {
 						h, ticks, amplifier, false, false)));
 	}
 
-	// ---- client: right click = heavy in combat mode ------------------------
-
 	@EventBusSubscriber(modid = "ordeal", value = Dist.CLIENT)
 	@OnlyIn(Dist.CLIENT)
 	public static final class Client {
 
-		/** In combat mode, right click IS the heavy punch; vanilla use is swallowed. */
 		@SubscribeEvent
 		public static void onUse(InputEvent.InteractionKeyMappingTriggered event) {
 			if (!event.isUseItem()) return;
 			var pl = Minecraft.getInstance().player;
 			if (pl == null || !pl.getData(OrdealModVariables.PLAYER_VARIABLES).combatMode) return;
+
+			if (keepsOwnUse(pl.getMainHandItem()) || keepsOwnUse(pl.getOffhandItem())) return;
 			event.setCanceled(true);
 			event.setSwingHand(false);
 			PacketDistributor.sendToServer(

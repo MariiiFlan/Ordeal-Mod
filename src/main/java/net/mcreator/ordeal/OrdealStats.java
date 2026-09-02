@@ -27,6 +27,12 @@ public class OrdealStats {
 	public static final double LIMIT_MAX       = 150.0;
 	public static final double BLOOD_PER_DOSE  = 10.0;
 
+	/**
+	 * Flat chi everybody has before a single point goes into the CHI stat. Without
+	 * it a fresh player sits at 1 chi and cannot cast anything at all.
+	 */
+	public static double CHI_BASE    = OrdealTuning.d("stats.chi_base", 20.0);
+
 	public static double CHI_REGEN   = OrdealTuning.d("stats.chi_regen_rate", 0.015);
 	public static double CHI_CHARGE  = OrdealTuning.d("stats.chi_charge_rate", 0.08);
 
@@ -67,18 +73,24 @@ public class OrdealStats {
 			v.talent1_strength = v.talent2_strength;
 			v.talent1_source = v.talent2_source;
 			v.talent2_id = "none"; v.talent2_strength = 0; v.talent2_source = "";
+			// the reserve has to travel with the talent, or it ends up attached
+			// to the wrong one - or simply lost
+			net.mcreator.ordeal.core.OrdealTalentChi.slideSlot2ToSlot1(v);
 			dirty = true;
 		}
 
-		double limit = chiLimit(v);
+		double limit = chiLimit(v) + net.mcreator.ordeal.ChiFruit.limitBonus(p);
 		if (v.chiLimit != limit) { v.chiLimit = limit; dirty = true; }
 
-		double chiMax = Math.max(1, v.statChi * CHI_PER_POINT * (1.0 - v.ChiConcealed));
+		double chiMax = Math.max(1, (CHI_BASE + v.statChi * CHI_PER_POINT + net.mcreator.ordeal.ChiFruit.chiBonus(p)) * (1.0 - v.ChiConcealed));
 		if (v.chiMax != chiMax) {
 			v.chiMax = chiMax;
 			v.chi = Math.min(v.chi, chiMax);
 			dirty = true;
 		}
+
+		// talent reserves: size follows strength, and a new talent arrives full
+		dirty |= net.mcreator.ordeal.core.OrdealTalentChi.recompute(p, v);
 
 		double xpCap = 100 + v.level * 50;
 		if (v.xpCap != xpCap) { v.xpCap = xpCap; dirty = true; }
@@ -90,9 +102,7 @@ public class OrdealStats {
 	}
 
 	public static double chiLimit(OrdealModVariables.PlayerVariables v) {
-		double spawn = v.spawnRandom > 0 ? v.spawnRandom : 10;
-		double natural = Math.min(100, spawn + Math.floor(v.level * (100 - spawn) / 100.0));
-		return Math.min(LIMIT_MAX, natural + v.bloodConsumed * BLOOD_PER_DOSE);
+		return 100 + v.bloodConsumed * BLOOD_PER_DOSE;
 	}
 
 	private static boolean levelUp(OrdealModVariables.PlayerVariables v) {
@@ -130,22 +140,31 @@ public class OrdealStats {
 		// spending chi IS using an ability - it puts you in combat and shuts
 		// your chi off for the window, wherever the spend came from
 		double last = p.getPersistentData().getDouble(LAST_CHI);
+		// the reserve is charged BEFORE the procedure runs, in OrdealTalentChi
+		// .prefund - by the time a spend shows up here it has already been paid
+		// for out of the right pool
 		if (v.chi < last - 0.0001)
 			net.mcreator.ordeal.core.OrdealCombatState.usedAbility(p);
 		p.getPersistentData().putDouble(LAST_CHI, v.chi);
 
 		net.mcreator.ordeal.core.OrdealCombatState.tickChiLock(p);
+		net.mcreator.ordeal.core.OrdealTalentChi.reclaim(p, v);
+		net.mcreator.ordeal.core.OrdealTalentChi.regen(p, v);
 
 		if (v.chiMax <= 0 || v.chi >= v.chiMax) return;
 
-		// no chi at all for the window after an ability - not even by charging
-		if (net.mcreator.ordeal.core.OrdealCombatState.chiLock(p) > 0) return;
+		// Two states switch natural regen off:
+		//   in combat      - the InCombat effect from trading blows, NOT the
+		//                    combat-mode stance
+		//   ability block  - the window after any chi spend
+		// In either one the ONLY way chi comes back is holding sneak to charge,
+		// which is a real choice to make while someone is swinging at you. The
+		// block used to kill charging as well, which left you with no way at all
+		// to get chi back for the whole window.
+		boolean locked = net.mcreator.ordeal.core.OrdealCombatState.chiLock(p) > 0
+				|| net.mcreator.ordeal.core.OrdealCombatState.inCombat(p);
+		if (locked && v.chiCharging <= 0) return;
 
-		// in combat chi does not come back on its own - you hold sneak and
-		// charge for it, which is a choice you make while someone is swinging.
-		// "in combat" is the InCombat effect you got from trading blows, not
-		// the combat-mode stance
-		if (v.chiCharging <= 0 && net.mcreator.ordeal.core.OrdealCombatState.inCombat(p)) return;
 		double rate = v.chiMax * (v.chiCharging > 0 ? CHI_CHARGE : CHI_REGEN) / 20.0;
 		v.chi = Math.min(v.chiMax, v.chi + rate);
 		if (p.tickCount % 5 == 0) v.markSyncDirty();
@@ -162,6 +181,7 @@ public class OrdealStats {
 		v.guard = v.guardMax;
 		v.guardRegenTick = 0;
 		v.inCombatWith = "none";
+		net.mcreator.ordeal.core.OrdealTalentChi.onRespawn(p, v);
 		v.markSyncDirty();
 		net.mcreator.ordeal.core.OrdealCombatState.disengage(p);
 		OrdealCombo.drop(p);

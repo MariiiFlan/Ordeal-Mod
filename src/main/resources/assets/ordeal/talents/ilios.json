@@ -2,25 +2,34 @@
   "id": "ilios",
   "name": "ILIOS THE PHOENIX FLAME",
   "short": "ILIOS",
-  "desc": "The user enters 'Ilios State'. Called the sun fire talent, this is one of the original great 4 talents.",
+  "desc": "The user enters the Ilios 'State'. Called the sun fire talent, this is one of the Original great 4 talents",
   "accent": "F2A63C",
   "types": [
     "ELEMENTAL",
     "STATE"
   ],
+  "chi": {
+    "base": 150,
+    "perStrength": 2.0,
+    "regenOutOfCombat": 1.0,
+    "regenInCombat": 0,
+    "grantFullOnAcquire": true,
+    "refillOnDeath": false
+  },
   "abilities": [
     {
       "id": "phoenix_spear",
       "icon": "PS",
       "name": "Phoenix Spear",
-      "kind": "MOVEMENT \u00b7 CHARGE",
+      "kind": "MOVEMENT \u00b7 CHARGE \u00b7 Dash",
       "desc": "Propel yourself with flames towards the enemy at full speed. Upon connecting with your target, they are struck with immense force and are usually sent flying & burning.",
-      "talentStrReq": 0,
+      "talentStrReq": 2,
       "levelNeeded": 0,
       "chiCost": 12,
       "cooldownTicks": 100,
       "baseDmg": 6,
       "extraDmg": 0.4,
+      "pays": 1,
       "hold": {
         "mode": "charge",
         "fireOnPress": false,
@@ -33,6 +42,255 @@
           "max": 2.2
         }
       }
+    },
+    {
+      "id": "phoenix_flames",
+      "icon": "PF",
+      "name": "Phoenix Flames",
+      "kind": "RANGED \u00b7 CHARGE \u00b7 PROJECTILE",
+      "desc": "Hurl a condensed ball of sun fire that homes toward your target and detonates on impact, igniting everything in the blast",
+      "talentStrReq": 1,
+      "chiCost": 8,
+      "cooldownTicks": 60,
+      "baseDmg": 4,
+      "extraDmg": 0.4,
+      "hold": {
+        "mode": "charge",
+        "levels": 5,
+        "secondsPerLevel": 0.5,
+        "chiPerTick": 0.5,
+        "chiControlMax": 0.7,
+        "power": {
+          "min": 1.0,
+          "max": 2.2
+        },
+        "anim3p": "trochos_armaton_hold",
+        "anim1p": "ordealanimations play @s shoot1_hold"
+      },
+      "pays": 1,
+      "projectile": {
+        "radius": 3,
+        "homing": 0.5,
+        "igniteSeconds": 3,
+        "explodeOnImpact": true,
+        "explodeFx": "ilios_explosions"
+      }
+    },
+    {
+      "id": "descending_meteor",
+      "icon": "DM",
+      "name": "Descending Meteor",
+      "kind": "MOVEMENT \u00b7 AIRBORNE \u00b7 SLAM",
+      "desc": "From the air, wreath yourself in flame and crash down like a falling star. The impact erupts, burning and launching anything caught under you",
+      "talentStrReq": 12,
+      "chiCost": 10,
+      "cooldownTicks": 170,
+      "baseDmg": 2.5,
+      "extraDmg": 0.4,
+      "reqStats": {
+        "agility": 8
+      },
+      "hold": {
+        "mode": "ramp",
+        "maxSeconds": 5,
+        "tickEvery": 2,
+        "chiPerTick": 0.2
+      },
+      "pays": 1
+    },
+    {
+      "id": "trochos_armaton",
+      "icon": "TA",
+      "name": "Trochos Armaton",
+      "kind": "MELEE \u00b7 CHARGE \u00b7 RUSH",
+      "desc": "The chariot wheel without the chariot. Spin forward as a wheel of flame, grinding through whoever stands in the path.",
+      "talentStrReq": 10,
+      "chiCost": 17,
+      "cooldownTicks": 140,
+      "baseDmg": 11,
+      "extraDmg": 0.5,
+      "hold": {
+        "mode": "charge",
+        "levels": 5,
+        "secondsPerLevel": 0.5,
+        "chiPerTick": 0.5,
+        "chiControlMax": 0.7,
+        "power": {
+          "min": 1.0,
+          "max": 2.2
+        },
+        "stunTicks": 0,
+        "stunWhileHold": true,
+        "anim3p": "trochos_armaton_hold"
+      },
+      "reqStats": {
+        "strength": 4,
+        "agility": 5
+      },
+      "pays": 1
+    },
+    {
+      "id": "claymore",
+      "icon": "CL",
+      "name": "Claymore",
+      "kind": "WEAPON \u00b7 SUMMON \u00b7 MELEE",
+      "desc": "Forge a greatsword of raw flame that only a seasoned Ilios body can hold. Slow, heavy, and it erases guard like paper.",
+      "chiCost": 30,
+      "cooldownTicks": 120,
+      "baseDmg": 0,
+      "extraDmg": 0.5,
+      "pays": 1,
+      "reqStats": {
+        "strength": 30
+      },
+      "talentStrReq": 15,
+      "stunTicks": 48
+    },
+    {
+      "id": "breath_of_the_phoenix",
+      "icon": "BO",
+      "name": "Breath of the Phoenix",
+      "kind": "RANGED \u00b7 HOLD \u00b7 STREAM",
+      "desc": "Exhale the phoenix's own breath - a sustained torrent of fire that pours from you for as long as you can feed it chi.",
+      "talentStrReq": 22,
+      "chiCost": 14,
+      "cooldownTicks": 300,
+      "baseDmg": 3.5,
+      "extraDmg": 0.4,
+      "pays": 1,
+      "hold": {
+        "mode": "charge",
+        "levels": 5,
+        "secondsPerLevel": 0.5,
+        "chiPerTick": 0.05,
+        "chiControlMax": 0.7,
+        "power": {
+          "min": 1.0,
+          "max": 2.2
+        },
+        "fireOnPress": true,
+        "anim3p": "breath_of_phoenix",
+        "stunTicks": 0,
+        "stunWhileHold": true
+      },
+      "projectile": {
+        "radius": 0,
+        "homing": 0,
+        "igniteSeconds": 0,
+        "explodeOnImpact": true,
+        "explodeFx": ""
+      }
+    },
+    {
+      "id": "fire_infusion",
+      "icon": "FI",
+      "name": "Fire Infusion",
+      "kind": "PASSIVE \u00b7 ON-HIT",
+      "desc": "Your bare strikes carry the phoenix flame. Every hit deals bonus fire damage and sets the victim alight.",
+      "talentStrReq": 3,
+      "chiCost": 4,
+      "cooldownTicks": 0,
+      "baseDmg": 0,
+      "extraDmg": 0.5,
+      "pays": 1
+    },
+    {
+      "id": "akonito",
+      "icon": "AK",
+      "name": "Akontio",
+      "kind": "WEAPON \u00b7 SUMMON \u00b7 THROWN",
+      "desc": "Forge a javelin of compressed sun fire, one for each hand. Thrown, it streaks like a spear of light and burns away the moment it leaves you.",
+      "talentStrReq": 8,
+      "chiCost": 12,
+      "cooldownTicks": 60,
+      "baseDmg": 0,
+      "extraDmg": 0.5,
+      "pays": 1
+    },
+    {
+      "id": "decimation_closing",
+      "icon": "DC",
+      "name": "Decimation Closing",
+      "kind": "UNSET",
+      "desc": "TODO - write this.",
+      "talentStrReq": 25,
+      "chiCost": 55,
+      "cooldownTicks": 1200,
+      "baseDmg": 3.5,
+      "extraDmg": 0.5,
+      "pays": 1,
+      "stunTicks": 15,
+      "hold": {
+        "mode": "charge",
+        "levels": 5,
+        "secondsPerLevel": 0.5,
+        "chiPerTick": 0.5,
+        "chiControlMax": 0.7,
+        "power": {
+          "min": 1.0,
+          "max": 2.2
+        },
+        "stunTicks": 0,
+        "stunWhileHold": true
+      }
+    },
+    {
+      "id": "tomas",
+      "icon": "TO",
+      "name": "Tomas",
+      "kind": "UNSET",
+      "desc": "TODO - write this.",
+      "talentStrReq": 28,
+      "chiCost": 40,
+      "cooldownTicks": 200,
+      "baseDmg": 15,
+      "extraDmg": 0.4,
+      "pays": 1,
+      "hold": {
+        "mode": "charge",
+        "levels": 5,
+        "secondsPerLevel": 0.5,
+        "chiPerTick": 0.5,
+        "chiControlMax": 0.7,
+        "power": {
+          "min": 1.0,
+          "max": 2.2
+        },
+        "stunTicks": 0
+      },
+      "projectile": {
+        "radius": 0,
+        "homing": 0,
+        "igniteSeconds": 0,
+        "explodeOnImpact": true,
+        "explodeFx": ""
+      }
+    },
+    {
+      "id": "ilios_state",
+      "icon": "IS",
+      "name": "Ilios State",
+      "kind": "STATE · LADDER",
+      "desc": "Ilios' power unleashed. Tap to climb a stage, crouch+tap to drop one. Four rungs: Ilios State, Combat Mode, War State, Anointed War State. Chi drains faster the higher you climb, and running dry sinks you a rung instead of switching you off.",
+      "talentStrReq": 0,
+      "chiCost": 0,
+      "cooldownTicks": 0,
+      "baseDmg": 0,
+      "extraDmg": 0,
+      "pays": 1
+    },
+    {
+      "id": "flight",
+      "icon": "FL",
+      "name": "Flight",
+      "kind": "PASSIVE · FLIGHT",
+      "desc": "While in the Ilios State: you are able to use your flames to propulse yourself in the air, moving at great speeds.",
+      "talentStrReq": 5,
+      "chiCost": 0,
+      "cooldownTicks": 0,
+      "baseDmg": 0,
+      "extraDmg": 0,
+      "pays": 1
     }
   ]
 }

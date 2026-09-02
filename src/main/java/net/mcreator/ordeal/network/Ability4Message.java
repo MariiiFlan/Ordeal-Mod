@@ -14,6 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.core.SectionPos;
 
+import net.mcreator.ordeal.procedures.AbilityKeyReleasedProcedure;
 import net.mcreator.ordeal.procedures.AbilityCallProcedure;
 import net.mcreator.ordeal.OrdealMod;
 import net.mcreator.ordeal.CustomPacketPayload;
@@ -53,6 +54,10 @@ public record Ability4Message(int eventType, int pressedms) implements CustomPac
 		if (type == 0) {
 
 			AbilityCallProcedure.execute(world, entity);
+		}
+		if (type == 1) {
+
+			AbilityKeyReleasedProcedure.execute(entity);
 		}
 	}
 

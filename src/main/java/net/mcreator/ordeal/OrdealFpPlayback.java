@@ -208,6 +208,8 @@ public final class OrdealFpPlayback {
 				} else {
 					loopsLeft--;
 					if (loopsLeft > 0) playTicks = 0;
+					// hold last frame: sit on the final pose until something stops it
+					else if (anim.holdLast) playTicks = dur;
 					else toIdleOrStop();
 				}
 			}

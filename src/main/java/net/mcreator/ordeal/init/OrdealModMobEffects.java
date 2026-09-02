@@ -14,6 +14,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.core.registries.Registries;
 
+import net.mcreator.ordeal.procedures.StunnedExpiresProcedure;
 import net.mcreator.ordeal.procedures.InCombatEffectExpiresProcedure;
 import net.mcreator.ordeal.potion.*;
 import net.mcreator.ordeal.OrdealMod;
@@ -39,6 +40,14 @@ public class OrdealModMobEffects {
 	public static final DeferredHolder<MobEffect, MobEffect> SCREEN_SHAKE = REGISTRY.register("screen_shake", () -> new ScreenShakeMobEffect());
 	public static final DeferredHolder<MobEffect, MobEffect> PHOENIX_SPEAR = REGISTRY.register("phoenix_spear", () -> new PhoenixSpearMobEffect());
 	public static final DeferredHolder<MobEffect, MobEffect> IN_COMBAT = REGISTRY.register("in_combat", () -> new InCombatMobEffect());
+	public static final DeferredHolder<MobEffect, MobEffect> MOVEMENT_STUNNED = REGISTRY.register("movement_stunned", () -> new MovementStunnedMobEffect());
+	public static final DeferredHolder<MobEffect, MobEffect> DESCENDING_METEOR = REGISTRY.register("descending_meteor", () -> new DescendingMeteorMobEffect());
+	public static final DeferredHolder<MobEffect, MobEffect> TROCHOS_ARMATON_FORWARD = REGISTRY.register("trochos_armaton_forward", () -> new TrochosArmatonForwardMobEffect());
+	public static final DeferredHolder<MobEffect, MobEffect> BACK_DASH = REGISTRY.register("back_dash", () -> new BackDashMobEffect());
+	public static final DeferredHolder<MobEffect, MobEffect> TROCHOS_ARMATON_BACK = REGISTRY.register("trochos_armaton_back", () -> new TrochosArmatonBackMobEffect());
+	public static final DeferredHolder<MobEffect, MobEffect> NEGLET_FALL_DMG = REGISTRY.register("neglet_fall_dmg", () -> new NegletFallDmgMobEffect());
+	public static final DeferredHolder<MobEffect, MobEffect> BREATHOF_PHOENIX = REGISTRY.register("breathof_phoenix", () -> new BreathofPhoenixMobEffect());
+	public static final DeferredHolder<MobEffect, MobEffect> CAMERA_LOCK_POTION = REGISTRY.register("camera_lock_potion", () -> new CameraLockPotionMobEffect());
 
 	@SubscribeEvent
 	public static void onEffectRemoved(MobEffectEvent.Remove event) {
@@ -57,8 +66,12 @@ public class OrdealModMobEffects {
 	}
 
 	private static void expireEffects(Entity entity, MobEffectInstance effectInstance) {
-		if (effectInstance.getEffect().is(IN_COMBAT)) {
+		if (effectInstance.getEffect().is(STUNNED)) {
+			StunnedExpiresProcedure.execute(entity);
+		} else if (effectInstance.getEffect().is(IN_COMBAT)) {
 			InCombatEffectExpiresProcedure.execute(entity);
+		} else if (effectInstance.getEffect().is(MOVEMENT_STUNNED)) {
+			StunnedExpiresProcedure.execute(entity);
 		}
 	}
 }

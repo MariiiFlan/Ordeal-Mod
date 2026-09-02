@@ -52,6 +52,18 @@ public class OrdealAnimatorClient {
 	public static boolean rotateMode = true;    // true = rotate (R), false = move (T)
 	/** Preview mode: false = third person, true = down your own eyes. */
 	public static boolean firstPerson = false;
+
+	/**
+	 * Whether the dummy shows the procedural layers - living motion and wobble -
+	 * on top of the clip.
+	 *
+	 * The screen switches this on while the timeline is PLAYING and off while it
+	 * is parked. Keying a pose against a model that is breathing and swaying is
+	 * miserable, but with the layers off entirely the Noise and Wobble dials look
+	 * like they do nothing at all. Play = see what it will look like; stop = a
+	 * clean pose to key against.
+	 */
+	public static boolean previewLayers = false;
 	/** Pose override while the user is mid-drag on a bone (screen writes, renderer reads). */
 	public static final Map<String, OrdealAnimData.Pose> livePose = new HashMap<>();
 
@@ -131,6 +143,7 @@ public class OrdealAnimatorClient {
 	}
 
 	public static void close() {
+		previewLayers = false;
 		active = false;
 		livePose.clear();
 	}
@@ -279,13 +292,22 @@ public class OrdealAnimatorClient {
 		ps.pushPose();
 		ps.translate(dummyPos.x - cam.x, dummyPos.y - cam.y, dummyPos.z - cam.z);
 
-		// root channel: whole-body transform
+		// root channel plus the wobble: both move the whole body, so both are a
+		// stack transform here, exactly as OrdealAnimRender.applyRoot does it
+		// in game
 		OrdealAnimData.Pose root = poseFor("root");
-		if (root != null) {
-			ps.translate(root.x / 16f, -root.y / 16f, root.z / 16f);
-			ps.mulPose(com.mojang.math.Axis.YP.rotationDegrees(root.ry));
-			ps.mulPose(com.mojang.math.Axis.XP.rotationDegrees(root.rx));
-			ps.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(root.rz));
+		OrdealAnimData.Pose wob = previewLayers && data != null
+				? OrdealAnimLean.preview(data.wobble) : null;
+		if (root != null || wob != null) {
+			float rx = root == null ? 0 : root.rx;
+			float ry = root == null ? 0 : root.ry;
+			float rz = root == null ? 0 : root.rz;
+			if (wob != null) { rx += wob.rx; ry += wob.ry; rz += wob.rz; }
+			if (root != null)
+				ps.translate(root.x / 16f, -root.y / 16f, root.z / 16f);
+			ps.mulPose(com.mojang.math.Axis.YP.rotationDegrees(ry));
+			ps.mulPose(com.mojang.math.Axis.XP.rotationDegrees(rx));
+			ps.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(rz));
 		}
 
 		ps.mulPose(com.mojang.math.Axis.YP.rotationDegrees(modelYaw));
@@ -308,6 +330,11 @@ public class OrdealAnimatorClient {
 	private static void applyPose() {
 		model.young = false;
 		model.setAllVisible(true);
+		// Wobble is NOT here. It moves the whole body and is applied to the
+		// stack above, next to the root channel - putting it on the chest
+		// fought every clip that posed the chest itself. Living motion is not
+		// here either: noise is the first-person layer, and this is the
+		// third-person dummy.
 		pose(model.head, "head");
 		pose(model.body, "body");
 		pose(model.rightArm, "right_arm");

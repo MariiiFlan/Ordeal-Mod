@@ -29,6 +29,19 @@
         "chiPerSecond": 5,
         "tickEvery": 4
       }
+    },
+    {
+      "id": "semi_immortality",
+      "icon": "SI",
+      "name": "Semi-Immortality",
+      "kind": "UNSET",
+      "desc": "TODO - write this.",
+      "chiCost": 0,
+      "cooldownTicks": 0,
+      "baseDmg": 0,
+      "extraDmg": 0,
+      "talentStrReq": 150,
+      "pays": 1
     }
   ]
 }

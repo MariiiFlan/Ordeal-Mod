@@ -118,7 +118,20 @@ public class OrdealAnimData {
 
 	public float fps = 20f;
 	public float speed = 1f;
+	/** Repeat forever until something stops it. */
 	public boolean loop = false;
+	/**
+	 * What a non-looping clip does when it runs out.
+	 *
+	 * false - PLAY ONCE: the clip ends, the pose blends away, vanilla takes the
+	 *         body back (or the loop underneath it returns).
+	 * true  - HOLD LAST FRAME: the clip ends and the final pose STAYS on until
+	 *         something explicitly stops it. This is what a stance or a guard
+	 *         wants - reach the pose, then sit in it.
+	 *
+	 * Ignored while {@link #loop} is on; loop wins.
+	 */
+	public boolean holdLast = false;
 	/** Living-motion level baked into the clip: 0 Off, 1 Low, 2 Med, 3 High. */
 	public int noise = 1;
 	/** WASD lean level while this clip plays: 0 Off, 1 Low, 2 Med, 3 High. */
@@ -128,6 +141,20 @@ public class OrdealAnimData {
 
 	public List<Key> channel(String bone) {
 		return bones.computeIfAbsent(bone, b -> new ArrayList<>());
+	}
+
+	/** 0 play once, 1 loop, 2 hold last frame - the three states the animator cycles. */
+	public int endMode() {
+		return loop ? 1 : holdLast ? 2 : 0;
+	}
+
+	public void endMode(int mode) {
+		loop = mode == 1;
+		holdLast = mode == 2;
+	}
+
+	public static String endName(int mode) {
+		return mode == 1 ? "Loop" : mode == 2 ? "Hold Last" : "Play Once";
 	}
 
 	/** Clip length in ticks = time of the last key across all channels. */
@@ -265,6 +292,7 @@ public class OrdealAnimData {
 		root.addProperty("fps", fps);
 		root.addProperty("speed", speed);
 		root.addProperty("loop", loop);
+		root.addProperty("holdLast", holdLast);
 		root.addProperty("noise", noise);
 		root.addProperty("wobble", wobble);
 		JsonObject bonesObj = new JsonObject();
@@ -295,6 +323,8 @@ public class OrdealAnimData {
 			d.speed = root.get("speed").getAsFloat();
 		if (root.has("loop"))
 			d.loop = root.get("loop").getAsBoolean();
+		if (root.has("holdLast"))
+			d.holdLast = root.get("holdLast").getAsBoolean();
 		if (root.has("noise"))
 			d.noise = root.get("noise").getAsInt();
 		if (root.has("wobble"))

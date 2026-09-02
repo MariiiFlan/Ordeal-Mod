@@ -1,87 +1,156 @@
 package net.mcreator.ordeal;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 
 /**
- * Applies playback poses to player models. Rotations are added on top of
- * vanilla's animation and scaled by the blend weight, so a clip fading in
- * eases over the walk cycle instead of snapping.
+ * Applies playback poses to the player model.
  *
- * Two procedural layers ride on top of the keyframes: living-motion noise, so
- * a held pose breathes instead of freezing, and a WASD lean, so moving reads
- * as weight. Both are additive and neither writes to the clip.
+ * WHY THIS IS NO LONGER AN EVENT HANDLER.
+ *
+ * This used to pose the model from RenderPlayerEvent.Pre. That can never work.
+ * LivingEntityRenderer.render() fires the Pre event FIRST and calls
+ * model.setupAnim() AFTER it - so every rotation written here was overwritten
+ * by vanilla's own posing a moment later, every frame, silently. Authored clips
+ * looked like they were playing (weight ramped, the debug overlay said YES) and
+ * nothing moved.
+ *
+ * Invincible hit the same wall and solved it with TpAnimModelMixin: pose at the
+ * TAIL of setupAnim, after vanilla is done. Ordeal already has that mixin -
+ * OrdealAnimPoseMixin - and it calls the apply() below. It had simply fallen
+ * out of ordeal.mixins.json, so nothing was calling it and nothing rendered.
+ *
+ * The PoseStack is a different story: a transform pushed in RenderPlayerEvent.Pre
+ * survives setupAnim untouched, which is why OrdealRootRender - the whole-body
+ * lean - still lives on that event and works.
+ *
+ * WHAT LAYERS ON WHAT
+ *   head, body        ADDITIVE - the head keeps tracking where you look
+ *   arms, legs        ABSOLUTE - eased from the live vanilla rotation toward
+ *                     the authored one by the blend weight, so a pose REPLACES
+ *                     the walk cycle instead of stacking on top of it. This is
+ *                     what Invincible does, and it is why its flight poses read
+ *                     as poses rather than as a limp added to a run.
+ *   root              not here - OrdealRootRender draws it as a render transform
+ *
+ * Flip ABSOLUTE_LIMBS to false to go back to purely additive limbs.
  */
-@EventBusSubscriber(modid = "ordeal", value = Dist.CLIENT)
 public final class OrdealAnimRender {
 
 	private OrdealAnimRender() {}
 
 	private static final float DEG = (float) (Math.PI / 180.0);
 
-	@SubscribeEvent
-	public static void onPre(RenderPlayerEvent.Pre event) {
-		Player p = event.getEntity();
+	/**
+	 * THE Y FLIP. The animator's UI treats +Y as UP, the way anyone authoring a
+	 * pose expects. Minecraft's model space is Y-DOWN. OrdealAnimatorClient.pose()
+	 * has always accounted for that - it writes "part.y = pivot[1] - oy" - but
+	 * this renderer was doing "part.y += pose.y", so every authored vertical
+	 * offset came out INVERTED in game.
+	 *
+	 * That is the legs. default_idle lifts the right leg by 1.96px; in game it
+	 * was being pushed 1.96px DOWN instead, a ~4px error against the left leg,
+	 * which is exactly the fused, offset legs. Editor and game now agree.
+	 */
+	private static final float Y_FLIP = -1f;
+
+	/** Arms and legs replace the vanilla pose rather than adding to it. */
+	public static boolean ABSOLUTE_LIMBS = true;
+
+	/**
+	 * Called from OrdealAnimPoseMixin at the tail of PlayerModel.setupAnim.
+	 * Safe to call every frame for every player; returns immediately when there
+	 * is nothing to draw.
+	 */
+	public static void apply(PlayerModel<?> m, Player p) {
+		if (m == null || p == null) return;
+		if (isFirstPersonHand(p)) return;
+
 		boolean clip = OrdealAnimPlayback.isAnimating(p);
 		OrdealAnimData.Pose lean = OrdealAnimLean.compute(p, OrdealAnimPlayback.wobbleLevel(p));
 		if (!clip && lean == null) return;
 
-		PlayerModel<?> m = event.getRenderer().getModel();
 		float w = OrdealAnimPlayback.weight(p);
-		int noise = OrdealAnimPlayback.noiseLevel(p);
 
-		if (clip) {
-			OrdealAnimData.Pose head = swayed(p, "head", noise);
-			apply(m.head, head, w);
-			apply(m.hat, head, w);
-			apply(m.body, swayed(p, "body", noise), w);
-			apply(m.rightArm, swayed(p, "right_arm", noise), w);
-			apply(m.leftArm, swayed(p, "left_arm", noise), w);
-			apply(m.rightLeg, swayed(p, "right_leg", noise), w);
-			apply(m.leftLeg, swayed(p, "left_leg", noise), w);
+		if (clip && w > 0f) {
+			OrdealAnimData.Pose head = OrdealAnimPlayback.pose(p, "head");
+			add(m.head, head, w);
+			add(m.body, OrdealAnimPlayback.pose(p, "body"), w);
+			limb(m.rightArm, OrdealAnimPlayback.pose(p, "right_arm"), w);
+			limb(m.leftArm, OrdealAnimPlayback.pose(p, "left_arm"), w);
+			limb(m.rightLeg, OrdealAnimPlayback.pose(p, "right_leg"), w);
+			limb(m.leftLeg, OrdealAnimPlayback.pose(p, "left_leg"), w);
 		}
 
-		// lean is its own layer - it runs whether or not a clip is playing
+		// the lean is its own layer - it runs whether or not a clip is playing.
+		// While flying it stands down and OrdealRootRender leans the whole body
+		// instead, because a body lean cannot be done on a ModelPart.
 		if (lean != null) {
-			apply(m.body, lean, 1f);
+			add(m.body, lean, 1f);
 			OrdealAnimData.Pose counter = new OrdealAnimData.Pose();
 			counter.rx = -lean.rx * OrdealAnimLean.HEAD_COUNTER;
 			counter.rz = -lean.rz * OrdealAnimLean.HEAD_COUNTER;
-			apply(m.head, counter, 1f);
-			apply(m.hat, counter, 1f);
+			add(m.head, counter, 1f);
 		}
 
-		// sleeves and trousers follow their limbs
+		// sleeves, trousers, jacket and hat follow the parts they sit on
+		copy(m.hat, m.head);
+		copy(m.jacket, m.body);
 		copy(m.rightSleeve, m.rightArm);
 		copy(m.leftSleeve, m.leftArm);
 		copy(m.rightPants, m.rightLeg);
 		copy(m.leftPants, m.leftLeg);
-		copy(m.jacket, m.body);
 	}
 
 	/**
-	 * The sampled pose, straight.
+	 * THIRD PERSON IS NOT FIRST PERSON.
 	 *
-	 * Noise used to be added here too. It is first-person only now - wobble is
-	 * the third-person setting and noise is the first-person one, one each, so
-	 * changing a level has exactly one visible effect instead of two.
+	 * ItemInHandRenderer calls PlayerModel.setupAnim to draw the held hand, and
+	 * OrdealAnimPoseMixin fires at the tail of every setupAnim - so a
+	 * third-person clip was being painted onto the first-person hand as well.
+	 * They are two systems with two commands; nothing here may touch the fp rig.
+	 *
+	 * Your own model is never drawn in third-person form while you are in first
+	 * person, so skipping yourself whenever the camera is first person removes
+	 * the hand leak and nothing else. Other players are untouched - they render
+	 * in third person no matter which view you are in.
 	 */
-	private static OrdealAnimData.Pose swayed(Player p, String bone, int noise) {
-		return OrdealAnimPlayback.pose(p, bone);
+	private static boolean isFirstPersonHand(Player p) {
+		try {
+			Minecraft mc = Minecraft.getInstance();
+			return mc.player == p && mc.options.getCameraType().isFirstPerson();
+		} catch (Throwable t) {
+			return false;
+		}
 	}
 
-	private static void apply(ModelPart part, OrdealAnimData.Pose pose, float w) {
+	/** Additive: the authored rotation is added to whatever vanilla posed. */
+	private static void add(ModelPart part, OrdealAnimData.Pose pose, float w) {
 		if (part == null || pose == null) return;
 		part.xRot += pose.rx * DEG * w;
 		part.yRot += pose.ry * DEG * w;
 		part.zRot += pose.rz * DEG * w;
 		part.x += pose.x * w;
-		part.y += pose.y * w;
+		part.y += pose.y * Y_FLIP * w;
+		part.z += pose.z * w;
+	}
+
+	/**
+	 * Absolute: ease from the live vanilla rotation toward the authored one by
+	 * the blend weight. w=1 is a full override, w=0 is untouched vanilla, so
+	 * fading a clip in and out still blends smoothly over the walk cycle.
+	 */
+	private static void limb(ModelPart part, OrdealAnimData.Pose pose, float w) {
+		if (part == null || pose == null) return;
+		if (!ABSOLUTE_LIMBS) { add(part, pose, w); return; }
+		float rx = pose.rx * DEG, ry = pose.ry * DEG, rz = pose.rz * DEG;
+		part.xRot += (rx - part.xRot) * w;
+		part.yRot += (ry - part.yRot) * w;
+		part.zRot += (rz - part.zRot) * w;
+		part.x += pose.x * w;
+		part.y += pose.y * Y_FLIP * w;
 		part.z += pose.z * w;
 	}
 

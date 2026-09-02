@@ -103,6 +103,76 @@ public record OrdealActionMessage(String action, String arg, int value) implemen
 				net.mcreator.ordeal.OrdealAnim.stop(p);
 				return;
 			}
+
+			// ================= PANOPLY =================
+			// Everything below is done server-side on purpose: the client asks,
+			// the server moves. A client that lies about a point index gets a
+			// refusal, and a point holding nothing gives back nothing.
+			//
+			// m.value  = the flat point index, 0..15
+			// m.arg    = the inventory slot, for panoply_place_inv only
+			//
+			// These all return rather than break: Panoply syncs itself, so the
+			// markSyncDirty() at the bottom would be a wasted packet.
+
+			case "panoply_draw": {
+				net.mcreator.ordeal.Panoply.draw(p, m.value);
+				return;
+			}
+			case "panoply_stow": {
+				net.mcreator.ordeal.Panoply.stow(p);
+				return;
+			}
+			case "panoply_take": {
+				net.mcreator.ordeal.Panoply.takeOut(p, m.value);
+				return;
+			}
+			case "panoply_active": {
+				net.mcreator.ordeal.Panoply.toggleActive(p, m.value);
+				return;
+			}
+			case "panoply_place": {
+				// the stack on the container cursor is the one being placed
+				if (p instanceof net.minecraft.server.level.ServerPlayer sp) {
+					net.minecraft.world.item.ItemStack cursor = sp.containerMenu.getCarried();
+					if (!cursor.isEmpty()) {
+						if (net.mcreator.ordeal.Panoply.place(p, m.value, cursor)) {
+							cursor.shrink(1);
+							sp.containerMenu.setCarried(cursor.isEmpty()
+									? net.minecraft.world.item.ItemStack.EMPTY : cursor);
+						}
+					}
+				}
+				return;
+			}
+			case "panoply_bar": {
+				// drag landed on an equip bar slot. m.arg = the slot 0..5,
+				// m.value = the point, or -1 to empty it.
+				int idx;
+				try { idx = Integer.parseInt(m.arg); } catch (Exception e) { return; }
+				net.mcreator.ordeal.Panoply.setBar(p, idx, m.value);
+				return;
+			}
+			case "panoply_bar_reset": {
+				net.mcreator.ordeal.Panoply.resetBar(p);
+				return;
+			}
+			case "panoply_bar_swap": {
+				int a2;
+				try { a2 = Integer.parseInt(m.arg); } catch (Exception e) { return; }
+				net.mcreator.ordeal.Panoply.swapBar(p, a2, m.value);
+				return;
+			}
+			case "panoply_place_inv": {
+				// placed from the inventory grid on the panoply page. The client
+				// sends WHERE it came from, never WHAT it is - the server reads
+				// the real stack out of its own copy of the inventory.
+				int inv;
+				try { inv = Integer.parseInt(m.arg); } catch (Exception e) { return; }
+				net.mcreator.ordeal.Panoply.placeFromInventory(p, m.value, inv);
+				return;
+			}
+
 			default: return;
 		}
 		v.markSyncDirty();

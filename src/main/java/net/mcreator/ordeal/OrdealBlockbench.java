@@ -34,8 +34,9 @@ import net.mcreator.ordeal.OrdealAnimData.Key;
  * Reads and writes the Bedrock animation JSON that Blockbench exports
  * (format_version 1.8.0): seconds-keyed rotation/position channels per bone,
  * degrees, model-pixel positions, catmullrom or linear interpolation. Import
- * takes every animation in the file and saves each as an editor clip; export
- * writes the open clip as <name>.animation.json.
+ * reads the file and hands the animation names to a picker - only the ticked
+ * ones become editor clips; export writes the open clip as
+ * <name>.animation.json.
  *
  * Bone names: Blockbench player rigs call the whole-body bone "body" and the
  * chest "torso" — those map to the editor's "root" and "body".
@@ -73,8 +74,35 @@ public final class OrdealBlockbench {
 	// IMPORT
 	// ==================================================================
 
-	/** Returns a flash message, or null when the dialog was cancelled. */
-	public static String importFile() {
+	/**
+	 * What a Blockbench file turned out to hold.
+	 *
+	 * A file with several animations in it is not imported on the spot any more.
+	 * The picker gets this back, shows the names, and only what gets ticked is
+	 * written - importing a rig's whole animation set because you wanted one
+	 * clip out of it was how the list filled up with junk.
+	 *
+	 * {@code message} set and {@code names} empty means there was nothing to
+	 * pick: an error, or a single-clip format that went straight in.
+	 */
+	public static final class Pick {
+		public final java.util.List<String> names = new java.util.ArrayList<>();
+		/** display name -> the Bedrock animation body it came from */
+		final Map<String, JsonObject> bodies = new java.util.LinkedHashMap<>();
+		public String message;
+
+		Pick(String message) { this.message = message; }
+
+		Pick() {}
+	}
+
+	/**
+	 * Ask for a file and read it, WITHOUT saving anything yet.
+	 *
+	 * @return null when the dialog was cancelled; a Pick carrying a message when
+	 *         there is nothing to choose; otherwise a Pick listing the names.
+	 */
+	public static Pick importPick() {
 		String path = dialogOpen();
 		if (path == null) return null;
 		try {
@@ -83,35 +111,63 @@ public final class OrdealBlockbench {
 
 			// Invincible's own clips are a flat "frames" list, not Bedrock's
 			// nested "animations" object, so the format is told apart by what
-			// is actually in the file rather than by the file extension.
+			// is actually in the file rather than by the file extension. One
+			// file is one clip there, so there is nothing to pick.
 			if (root != null && root.has("frames") && root.get("frames").isJsonArray())
-				return importInvincible(root, Path.of(path));
+				return new Pick(importInvincible(root, Path.of(path)));
 
 			JsonObject anims = root == null ? null : root.getAsJsonObject("animations");
-			if (anims == null || anims.isEmpty()) return "No animations in that file";
-			int n = 0;
-			String first = null;
+			if (anims == null || anims.isEmpty()) return new Pick("No animations in that file");
+
+			Pick pick = new Pick();
 			for (Map.Entry<String, JsonElement> e : anims.entrySet()) {
+				if (!e.getValue().isJsonObject()) continue;
 				String name = e.getKey();
 				int dot = name.lastIndexOf('.');
 				if (dot >= 0) name = name.substring(dot + 1); // "animation.model.idle" -> "idle"
-				OrdealAnimData d = fromBedrock(e.getValue().getAsJsonObject());
-				if (!OrdealAnimStore.save(name, d)) continue;
-				n++;
-				if (first == null) first = name;
+				// two animations that shorten to the same name would silently
+				// eat each other, so the second one keeps its longer form
+				if (pick.bodies.containsKey(name)) name = e.getKey().replace('.', '_');
+				pick.names.add(name);
+				pick.bodies.put(name, e.getValue().getAsJsonObject());
 			}
-			if (first == null) return "Import failed - nothing saved";
-			OrdealAnimData loaded = OrdealAnimStore.load(first);
-			if (loaded != null) {
-				OrdealAnimatorClient.data = loaded;
-				OrdealAnimatorClient.clipName = first;
-				OrdealAnimatorClient.time = 0;
-				OrdealAnimatorClient.livePose.clear();
-			}
-			return "Imported " + n + " animation(s) - now editing " + first;
+			if (pick.names.isEmpty()) return new Pick("No animations in that file");
+			return pick;
 		} catch (Exception ex) {
-			return "Import failed: " + ex.getMessage();
+			return new Pick("Import failed: " + ex.getMessage());
 		}
+	}
+
+	/** Save just the ticked animations. Returns a flash message. */
+	public static String importChosen(Pick pick, java.util.List<String> chosen) {
+		if (pick == null || chosen == null || chosen.isEmpty()) return "Nothing to import";
+		int n = 0;
+		String first = null;
+		for (String name : chosen) {
+			JsonObject body = pick.bodies.get(name);
+			if (body == null) continue;
+			OrdealAnimData d = fromBedrock(body);
+			if (!OrdealAnimStore.save(name, d)) continue;
+			n++;
+			if (first == null) first = name;
+		}
+		if (first == null) return "Import failed - nothing saved";
+		OrdealAnimData loaded = OrdealAnimStore.load(first);
+		if (loaded != null) {
+			OrdealAnimatorClient.data = loaded;
+			OrdealAnimatorClient.clipName = first;
+			OrdealAnimatorClient.time = 0;
+			OrdealAnimatorClient.livePose.clear();
+		}
+		return "Imported " + n + " animation(s) - now editing " + first;
+	}
+
+	/** Take the lot, no picker. Kept for anything that still calls it. */
+	public static String importFile() {
+		Pick pick = importPick();
+		if (pick == null) return null;
+		if (pick.names.isEmpty()) return pick.message;
+		return importChosen(pick, pick.names);
 	}
 
 	// ---- Invincible import --------------------------------------------------

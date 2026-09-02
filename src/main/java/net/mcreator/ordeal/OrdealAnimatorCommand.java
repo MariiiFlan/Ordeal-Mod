@@ -12,17 +12,25 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
- * Ordeal Animator — /ordealadmin animator [name]
+ * Ordeal Animator — /ordealanimations
  *
- * Registers a second "ordealadmin" root; Brigadier merges it into the
- * existing /ordealadmin tree, so the existing command file is untouched.
- * The existing root keeps its own permission requirement; "animator"
- * additionally requires permission level 2 itself.
+ * TWO ACCESS LEVELS, and the split is the whole point of this file.
  *
- * The editor is a client screen, so this only opens in singleplayer /
- * LAN-host (integrated server). On a dedicated server it tells you so.
- * No client classes are referenced directly — resolved via Class.forName
- * inside a Dist.CLIENT guard, same pattern as IIC.
+ *   /ordealanimations animator [name]   - DEV ONLY. Opens the editor.
+ *   everything else                     - OPEN TO ANYONE.
+ *
+ * Playing a clip is open on purpose: procedures fire these commands, and a
+ * procedure's command source carries the player it is running for as its
+ * entity. Gating the root the way /ordealadmin does would make OrdealCommands
+ * .devOnly() look at that player, decide they are not a dev, and silently
+ * refuse - so every animation called from a procedure would do nothing for
+ * everyone except the dev accounts. The gate therefore sits on "animator"
+ * alone, which is the only branch that actually needs protecting.
+ *
+ * The editor is a client screen, so it only opens in singleplayer / LAN-host
+ * (integrated server). On a dedicated server it tells you so. No client
+ * classes are referenced directly — resolved via Class.forName inside a
+ * Dist.CLIENT guard, same pattern as IIC.
  */
 @EventBusSubscriber
 public class OrdealAnimatorCommand {
@@ -30,13 +38,10 @@ public class OrdealAnimatorCommand {
 	@SubscribeEvent
 	public static void onRegisterCommands(RegisterCommandsEvent event) {
 		event.getDispatcher().register(
-				Commands.literal("ordealadmin")
-						// brigadier keeps the first-registered root's requirement when the
-						// two ordealadmin trees merge, so the gate lives on both roots
-						.requires(src -> src.hasPermission(2)
-								&& net.mcreator.ordeal.core.OrdealCommands.devOnly(src))
-						.then(Commands.literal("anim")
-								.then(Commands.literal("play")
+				Commands.literal("ordealanimations")
+						// NO requirement on the root - see the class note. Anything a
+						// procedure needs to call lives under here unguarded.
+						.then(Commands.literal("play")
 										.then(Commands.argument("target", net.minecraft.commands.arguments.EntityArgument.players())
 												.then(Commands.argument("name", StringArgumentType.word()).suggests(CLIPS)
 														.executes(ctx -> play(ctx, 1, -1))
@@ -52,16 +57,17 @@ public class OrdealAnimatorCommand {
 																				.executes(ctx -> play(ctx,
 																						com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "loops"),
 																						com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "ticks")))))))))
-								.then(Commands.literal("combo")
-										.then(Commands.argument("target", net.minecraft.commands.arguments.EntityArgument.players())
-												.then(Commands.argument("names", StringArgumentType.greedyString()).suggests(CLIPS)
-														.executes(OrdealAnimatorCommand::combo))))
-								.then(Commands.literal("stop")
-										.executes(ctx -> stop(ctx.getSource().getPlayerOrException()))
-										.then(Commands.argument("target", net.minecraft.commands.arguments.EntityArgument.players())
-												.executes(OrdealAnimatorCommand::stopMany)))
-								.then(Commands.literal("list").executes(OrdealAnimatorCommand::list))
-								.then(Commands.literal("reload").executes(OrdealAnimatorCommand::reload)))
+						.then(Commands.literal("combo")
+								.then(Commands.argument("target", net.minecraft.commands.arguments.EntityArgument.players())
+										.then(Commands.argument("names", StringArgumentType.greedyString()).suggests(CLIPS)
+												.executes(OrdealAnimatorCommand::combo))))
+						.then(Commands.literal("stop")
+								.executes(ctx -> stop(ctx.getSource().getPlayerOrException()))
+								.then(Commands.argument("target", net.minecraft.commands.arguments.EntityArgument.players())
+										.executes(OrdealAnimatorCommand::stopMany)))
+						.then(Commands.literal("list").executes(OrdealAnimatorCommand::list))
+						.then(Commands.literal("reload").executes(OrdealAnimatorCommand::reload))
+						// the one gated branch: the editor
 						.then(Commands.literal("animator")
 								.requires(src -> src.hasPermission(2)
 										&& net.mcreator.ordeal.core.OrdealCommands.devOnly(src))

@@ -18,9 +18,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.FriendlyByteBuf;
 
 import net.mcreator.ordeal.network.OrdealModVariables;
-import net.mcreator.ordeal.init.OrdealModSounds;
-import net.mcreator.ordeal.init.OrdealModMobEffects;
-import net.mcreator.ordeal.init.OrdealModMenus;
+import net.mcreator.ordeal.init.*;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.Queue;
@@ -43,6 +41,9 @@ public class OrdealMod {
 		NeoForge.EVENT_BUS.register(this);
 		modEventBus.addListener(this::registerNetworking);
 		OrdealModSounds.REGISTRY.register(modEventBus);
+		OrdealModItems.REGISTRY.register(modEventBus);
+		OrdealModEntities.REGISTRY.register(modEventBus);
+		OrdealModTabs.REGISTRY.register(modEventBus);
 		OrdealModVariables.ATTACHMENT_TYPES.register(modEventBus);
 		OrdealModMobEffects.REGISTRY.register(modEventBus);
 		OrdealModMenus.REGISTRY.register(modEventBus);

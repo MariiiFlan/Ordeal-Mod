@@ -66,7 +66,7 @@ public final class ChargeMeter {
 			// charge it, so the meter must not pretend otherwise
 			if (down && h != null && h.isCharge() && !onCooldown(p, off + i + 1)) {
 				if (!wasDown[i]) ticks[i] = 0;
-				if (ticks[i] < h.maxTicks()) ticks[i]++;
+				if (ticks[i] < maxTicksOf(p, name, h)) ticks[i]++;
 			} else {
 				ticks[i] = 0;
 			}
@@ -74,11 +74,16 @@ public final class ChargeMeter {
 		}
 	}
 
-	/** Reads the CD_1..CD_10 effect for a loadout slot, same as the HUD does. */
+	/**
+	 * Reads the CD_1..CD_10 effect for a loadout slot, and applies the SAME rule
+	 * AbilityHold uses: under a whole second left counts as ready. Otherwise the
+	 * meter would refuse to wind up during a second where the cast already works.
+	 */
 	private static boolean onCooldown(LocalPlayer p, int slot) {
 		var fx = cdEffect(slot);
 		if (fx == null) return false;
-		return p.hasEffect(net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.wrapAsHolder(fx));
+		var inst = p.getEffect(net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.wrapAsHolder(fx));
+		return inst != null && inst.getDuration() >= net.mcreator.ordeal.AbilityHold.CD_READY_AT;
 	}
 
 	private static final java.util.Map<Integer, net.minecraft.world.effect.MobEffect> CD_CACHE =
@@ -115,6 +120,26 @@ public final class ChargeMeter {
 		return ab == null ? null : ab.hold;
 	}
 
+	/**
+	 * Tomas charges off its own tunable (tomas.charge_seconds, cut by Chi
+	 * Control), not the json - the SAME override AbilityHold runs server-side.
+	 * Without this the meter fills in the json's few seconds and reads FULL
+	 * while the server knows you are at stage 0.
+	 */
+	private static boolean isTomas(String bound) {
+		if (bound == null || bound.isEmpty()) return false;
+		if (bound.equalsIgnoreCase(Tomas.ABILITY_ID)) return true;
+		OrdealTalents.Ability ab = OrdealTalents.abilityByName(bound);
+		return ab != null && Tomas.ABILITY_ID.equalsIgnoreCase(ab.id);
+	}
+
+	private static int maxTicksOf(LocalPlayer p, String bound, OrdealTalents.Hold h) {
+		if (h == null) return 1;
+		if (h.isCharge() && isTomas(bound) && p != null)
+			return Math.max(1, (int) Math.round(Tomas.chargeSeconds(p) * 20));
+		return h.maxTicks();
+	}
+
 	private static String loadout(OrdealModVariables.PlayerVariables v, int i) {
 		String s = switch (i) {
 			case 1 -> v.loadout_1; case 2 -> v.loadout_2; case 3 -> v.loadout_3;
@@ -129,7 +154,13 @@ public final class ChargeMeter {
 	public static int level(int slot, String bound) {
 		if (!ENABLED || slot < 0 || slot >= SLOTS) return 0;
 		OrdealTalents.Hold h = holdOf(bound);
-		return h == null || !h.isCharge() ? 0 : h.levelAt(ticks[slot]);
+		if (h == null || !h.isCharge()) return 0;
+		LocalPlayer p = Minecraft.getInstance().player;
+		if (isTomas(bound) && p != null) {
+			int per = Math.max(1, maxTicksOf(p, bound, h) / Math.max(1, h.levels));
+			return Math.min(h.levels, ticks[slot] / per);
+		}
+		return h.levelAt(ticks[slot]);
 	}
 
 	public static int maxLevel(String bound) {

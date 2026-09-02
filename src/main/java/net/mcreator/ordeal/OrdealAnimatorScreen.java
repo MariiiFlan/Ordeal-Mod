@@ -49,6 +49,9 @@ public class OrdealAnimatorScreen extends Screen {
 	private int colBtnOn() { return 0xFF2E6BD6; }
 	private int colText() { return 0xFFE8E8E8; }
 	private int colDim() { return 0xFF9A9AA6; }
+
+	/** Same colour, alpha forced to solid - for panels that must block what is under them. */
+	private static int opaque(int argb) { return 0xFF000000 | (argb & 0x00FFFFFF); }
 	private static final int COL_PLAYHEAD = 0xFFE03A3A;
 	private static final int COL_AUTOKEY = 0xFF2FA84F;
 
@@ -113,6 +116,12 @@ public class OrdealAnimatorScreen extends Screen {
 		return d != null && d.loop;
 	}
 
+	/** 0 play once, 1 loop, 2 hold last frame. */
+	private int endMode() {
+		OrdealAnimData d = data();
+		return d == null ? 0 : d.endMode();
+	}
+
 	private static class Sel {
 		final String bone;
 		final Key key;
@@ -154,11 +163,24 @@ public class OrdealAnimatorScreen extends Screen {
 	private int ctxXp, ctxYp;
 	private float ctxTime;
 
-	// modal: 0 none, 1 new-name, 2 load list
+	// modal: 0 none, 1 new-name, 2 load list, 3 import picker
 	private int modal = 0;
 	private EditBox nameBox;
 	private List<String> loadList = new ArrayList<>();
+	/**
+	 * What the browser actually draws: the same names, split into a first-person
+	 * group and a third-person one with a heading above each. A heading row is
+	 * stored with HDR in front of it and is never selectable.
+	 */
+	private List<String> loadRows = new ArrayList<>();
+	private static final String HDR = "\u0000";
 	private int loadScroll = 0;
+
+	// import picker: which animations out of a multi-clip Blockbench file to take
+	private OrdealBlockbench.Pick importPick = null;
+	private boolean[] importSel = new boolean[0];
+	private int importScroll = 0;
+	private static final int IMPORT_ROWS = 10;
 
 	// load browser: the highlighted clip plays live on the dummy until you
 	// pick Load (keep it) or leave (put the old clip back).
@@ -269,6 +291,9 @@ public class OrdealAnimatorScreen extends Screen {
 	@Override
 	public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
 		advancePlayback();
+		// wobble and living motion only ride the dummy while the timeline runs -
+		// posing against a model that is swaying is miserable
+		OrdealAnimatorClient.previewLayers = playing;
 		if (modal == 0) OrdealOrbitCam.pollKeys();
 		dsTop = this.height - (rulerH + OrdealAnimatorClient.bones().length * trackH + 22);
 		// keep the dummy centred in the strip of world the panels leave visible
@@ -295,6 +320,8 @@ public class OrdealAnimatorScreen extends Screen {
 			renderNameModal(g, mouseX, mouseY);
 		else if (modal == 2)
 			renderLoadModal(g, mouseX, mouseY);
+		else if (modal == 3)
+			renderImportModal(g, mouseX, mouseY);
 
 		if (ctxOpen)
 			renderCtxMenu(g, mouseX, mouseY);
@@ -503,7 +530,21 @@ public class OrdealAnimatorScreen extends Screen {
 			case 21 -> { flipSides(); }
 			case 13 -> resetSelectedBoneAtPlayhead();
 			case 14 -> { OrdealOrbitCam.center(); flash("Camera centered on the dummy"); }
-			case 15 -> { String m = OrdealBlockbench.importFile(); if (m != null) flash(m); }
+			case 15 -> {
+				// a Blockbench file usually holds several animations - pick which
+				OrdealBlockbench.Pick pick = OrdealBlockbench.importPick();
+				if (pick == null) {
+					// cancelled, or a single-clip format that imported straight in
+				} else if (pick.message != null) {
+					flash(pick.message);
+				} else {
+					importPick = pick;
+					importSel = new boolean[pick.names.size()];
+					if (importSel.length == 1) importSel[0] = true;
+					importScroll = 0;
+					modal = 3;
+				}
+			}
 			case 16 -> { String m = OrdealBlockbench.exportFile(); if (m != null) flash(m); }
 			case 17 -> { // living-motion level, saved with the clip
 				OrdealAnimData nd = data();
@@ -576,7 +617,11 @@ public class OrdealAnimatorScreen extends Screen {
 		int rx = this.width - 4;
 		rx = trBtnRightToggle(g, rx, y, "Auto-Key", 42, autoKey, COL_AUTOKEY, mx, my);
 		rx = trBtnRightToggle(g, rx, y, "Snap", 41, snap, colBtnOn(), mx, my);
-		rx = trBtnRightToggle(g, rx, y, "Loop", 40, looping(), colBtnOn(), mx, my);
+		// one button, three states - a clip either runs once, repeats, or stops
+		// on its final pose and stays there
+		int em = endMode();
+		rx = trBtnRightToggle(g, rx, y, OrdealAnimData.endName(em), 40, em != 0,
+				em == 1 ? colBtnOn() : COL_AUTOKEY, mx, my);
 	}
 
 	private int trBtn(GuiGraphics g, int x, int y, String label, int id, int mx, int my, boolean on) {
@@ -617,9 +662,13 @@ public class OrdealAnimatorScreen extends Screen {
 				OrdealAnimData ld = data();
 				if (ld != null) {
 					pushUndo();
-					ld.loop = !ld.loop;
-					flash(ld.loop ? "Looping - plays until something stops it"
-							: "One-shot - plays once, then hands back");
+					int next = (ld.endMode() + 1) % 3;
+					ld.endMode(next);
+					flash(switch (next) {
+						case 1 -> "Loop - repeats until something stops it";
+						case 2 -> "Hold Last - freezes on the final pose until stopped";
+						default -> "Play Once - runs through, then hands back";
+					});
 				}
 			}
 			case 41 -> snap = !snap;
@@ -936,11 +985,39 @@ public class OrdealAnimatorScreen extends Screen {
 
 	/** {x, y, w, h, rows} — one source of truth for drawing and hit-testing. */
 	private int[] loadGeom() {
-		int rows = Math.min(LOAD_ROWS, Math.max(1, loadList.size()));
+		int rows = Math.min(LOAD_ROWS, Math.max(1, loadRows.size()));
 		int w = 170;
-		// two rows of buttons now: Load/Rename/Copy, then Delete/Close
-		int h = 16 + rows * 13 + 4 + 16 + 16 + 14;
+		// two rows of buttons, then the hint line - which used to run off the
+		// bottom edge and land on top of the bone panel underneath
+		int h = 16 + rows * 13 + 4 + 16 + 16 + 24;
 		return new int[]{10, TOOLBAR_H + 6, w, h, rows};
+	}
+
+	/**
+	 * Rebuild the display rows from loadList, third person first.
+	 *
+	 * A first-person clip and the third-person clip of the same move are two
+	 * different things that often share a name shape, so they get their own
+	 * headings instead of one flat alphabetical list.
+	 */
+	private void rebuildLoadRows() {
+		loadRows = new ArrayList<>();
+		List<String> tp = new ArrayList<>(), fp = new ArrayList<>();
+		for (String nm : loadList)
+			(OrdealAnimStore.firstPerson(nm) ? fp : tp).add(nm);
+		if (!tp.isEmpty()) {
+			loadRows.add(HDR + "THIRD PERSON");
+			loadRows.addAll(tp);
+		}
+		if (!fp.isEmpty()) {
+			loadRows.add(HDR + "FIRST PERSON");
+			loadRows.addAll(fp);
+		}
+		loadScroll = Math.max(0, Math.min(loadScroll, Math.max(0, loadRows.size() - LOAD_ROWS)));
+	}
+
+	private static boolean isHeader(String row) {
+		return row.startsWith(HDR);
 	}
 
 	private void openLoad() {
@@ -951,6 +1028,7 @@ public class OrdealAnimatorScreen extends Screen {
 		previewName = null;
 		deleteArm = false;
 		loadList = OrdealAnimStore.list();
+		rebuildLoadRows();
 		loadScroll = 0;
 		modal = 2;
 	}
@@ -1002,7 +1080,7 @@ public class OrdealAnimatorScreen extends Screen {
 		boolean gone = OrdealAnimStore.delete(name);
 		restorePreview();
 		loadList = OrdealAnimStore.list();
-		loadScroll = Math.min(loadScroll, Math.max(0, loadList.size() - LOAD_ROWS));
+		rebuildLoadRows();
 		deleteArm = false;
 		flash(!gone ? "Could not delete " + name
 				: loadList.contains(name) ? "Deleted your copy - a built-in " + name + " is still shipped"
@@ -1012,8 +1090,11 @@ public class OrdealAnimatorScreen extends Screen {
 	private void renderLoadModal(GuiGraphics g, int mx, int my) {
 		int[] geo = loadGeom();
 		int x = geo[0], y = geo[1], w = geo[2], h = geo[3], rows = geo[4];
-		g.fill(x, y, x + w, y + h, colPanel());
-		g.fill(x, y, x + w, y + 12, colPanelHead());
+		// the browser is a modal: everything behind it goes dark and its own
+		// panel is fully opaque, so the editor's labels stop reading through it
+		g.fill(0, 0, this.width, this.height, 0x99000000);
+		g.fill(x, y, x + w, y + h, opaque(colPanel()));
+		g.fill(x, y, x + w, y + 12, opaque(colPanelHead()));
 		g.fill(x, y, x + w, y + 1, colBorder());
 		g.fill(x, y + h - 1, x + w, y + h, colBorder());
 		g.fill(x, y, x + 1, y + h, colBorder());
@@ -1024,9 +1105,14 @@ public class OrdealAnimatorScreen extends Screen {
 			g.drawCenteredString(this.font, "nothing saved yet", x + w / 2, y + 22, colDim());
 		for (int i = 0; i < rows; i++) {
 			int idx = loadScroll + i;
-			if (idx >= loadList.size()) break;
-			String name = loadList.get(idx);
+			if (idx >= loadRows.size()) break;
+			String name = loadRows.get(idx);
 			int ry = y + 16 + i * 13;
+			if (isHeader(name)) {
+				g.drawString(this.font, name.substring(1), x + 6, ry + 3, 0xFF7ED8F5);
+				g.fill(x + 6, ry + 12, x + w - 6, ry + 13, 0x407ED8F5);
+				continue;
+			}
 			boolean sel = name.equals(previewName);
 			boolean hot = mx >= x + 4 && mx <= x + w - 4 && my >= ry && my <= ry + 12;
 			if (sel) g.fill(x + 4, ry, x + w - 4, ry + 12, colBtnOn());
@@ -1048,6 +1134,122 @@ public class OrdealAnimatorScreen extends Screen {
 				x + 5, by + 35, colDim());
 	}
 
+	// ------------------------------------------------------------------
+	// Import picker
+	// ------------------------------------------------------------------
+
+	private int[] importGeom() {
+		int count = importPick == null ? 0 : importPick.names.size();
+		int rows = Math.min(IMPORT_ROWS, Math.max(1, count));
+		int w = 220;
+		int h = 16 + rows * 13 + 6 + 16 + 24;
+		return new int[]{(this.width - w) / 2, Math.max(TOOLBAR_H + 8, (this.height - h) / 2), w, h, rows};
+	}
+
+	/**
+	 * One row per animation in the file, each with a tick box.
+	 *
+	 * Blockbench files routinely hold a dozen animations for one rig, and the
+	 * importer used to take every last one and dump them into the clip list
+	 * under whatever names the file used. Now nothing lands until it is ticked.
+	 */
+	private void renderImportModal(GuiGraphics g, int mx, int my) {
+		if (importPick == null) { modal = 0; return; }
+		int[] geo = importGeom();
+		int x = geo[0], y = geo[1], w = geo[2], h = geo[3], rows = geo[4];
+
+		g.fill(0, 0, this.width, this.height, 0x99000000);
+		g.fill(x, y, x + w, y + h, opaque(colPanel()));
+		g.fill(x, y, x + w, y + 12, opaque(colPanelHead()));
+		g.fill(x, y, x + w, y + 1, colBorder());
+		g.fill(x, y + h - 1, x + w, y + h, colBorder());
+		g.fill(x, y, x + 1, y + h, colBorder());
+		g.fill(x + w - 1, y, x + w, y + h, colBorder());
+		g.drawString(this.font, "IMPORT - " + importPick.names.size() + " animation(s)",
+				x + 4, y + 2, 0xFFB9C6FF);
+
+		for (int i = 0; i < rows; i++) {
+			int idx = importScroll + i;
+			if (idx >= importPick.names.size()) break;
+			int ry = y + 16 + i * 13;
+			boolean hot = mx >= x + 4 && mx <= x + w - 4 && my >= ry && my <= ry + 12;
+			if (hot) g.fill(x + 4, ry, x + w - 4, ry + 12, colBtnHot());
+			// tick box
+			g.fill(x + 6, ry + 2, x + 15, ry + 11, 0xFF16161C);
+			if (importSel[idx]) g.fill(x + 8, ry + 4, x + 13, ry + 9, COL_AUTOKEY);
+			String nm = importPick.names.get(idx);
+			boolean clash = OrdealAnimStore.exists(nm);
+			g.drawString(this.font, nm, x + 20, ry + 2, importSel[idx] ? 0xFFFFFFFF : colText());
+			// a name already in the list would be quietly replaced - say so
+			if (clash)
+				g.drawString(this.font, "overwrites",
+						x + w - this.font.width("overwrites") - 6, ry + 2, 0xFFE0A050);
+		}
+
+		int by = y + 16 + rows * 13 + 6;
+		int picked = 0;
+		for (boolean b : importSel) if (b) picked++;
+		loadBtn(g, x + 4, by, 56, "All", true, mx, my, colBtn());
+		loadBtn(g, x + 62, by, 56, "None", true, mx, my, colBtn());
+		loadBtn(g, x + 120, by, 44, "Cancel", true, mx, my, colBtn());
+		loadBtn(g, x + w - 62, by, 58, "Import " + picked, picked > 0, mx, my, colBtnOn());
+		g.drawString(this.font, "click a row to tick it", x + 5, by + 18, colDim());
+	}
+
+	private boolean importModalClick(double mx, double my) {
+		if (importPick == null) { modal = 0; return true; }
+		int[] geo = importGeom();
+		int x = geo[0], y = geo[1], w = geo[2], h = geo[3], rows = geo[4];
+
+		for (int i = 0; i < rows; i++) {
+			int idx = importScroll + i;
+			if (idx >= importPick.names.size()) break;
+			int ry = y + 16 + i * 13;
+			if (mx >= x + 4 && mx <= x + w - 4 && my >= ry && my <= ry + 12) {
+				importSel[idx] = !importSel[idx];
+				return true;
+			}
+		}
+
+		int by = y + 16 + rows * 13 + 6;
+		if (my >= by && my <= by + 14) {
+			if (mx >= x + 4 && mx <= x + 60) {
+				java.util.Arrays.fill(importSel, true);
+				return true;
+			}
+			if (mx >= x + 62 && mx <= x + 118) {
+				java.util.Arrays.fill(importSel, false);
+				return true;
+			}
+			if (mx >= x + 120 && mx <= x + 164) {
+				modal = 0;
+				importPick = null;
+				return true;
+			}
+			if (mx >= x + w - 62 && mx <= x + w - 4) {
+				runImport();
+				return true;
+			}
+		}
+		if (!(mx >= x && mx <= x + w && my >= y && my <= y + h)) {
+			modal = 0;
+			importPick = null;
+		}
+		return true;
+	}
+
+	private void runImport() {
+		if (importPick == null) { modal = 0; return; }
+		java.util.List<String> want = new ArrayList<>();
+		for (int i = 0; i < importSel.length; i++)
+			if (importSel[i]) want.add(importPick.names.get(i));
+		if (want.isEmpty()) { flash("Nothing ticked"); return; }
+		String msg = OrdealBlockbench.importChosen(importPick, want);
+		modal = 0;
+		importPick = null;
+		flash(msg);
+	}
+
 	/** Opens the name box for a rename or a copy, prefilled and selected. */
 	private void askName(int mode, String target, String suggested) {
 		nameMode = mode;
@@ -1060,6 +1262,7 @@ public class OrdealAnimatorScreen extends Screen {
 	/** Re-reads the clip list after a rename, copy or delete, keeping a preview. */
 	private void refreshLoadList(String select) {
 		loadList = OrdealAnimStore.list();
+		rebuildLoadRows();
 		previewName = loadList.contains(select) ? select : null;
 		deleteArm = false;
 	}
@@ -1076,10 +1279,11 @@ public class OrdealAnimatorScreen extends Screen {
 		int x = geo[0], y = geo[1], w = geo[2], h = geo[3], rows = geo[4];
 		for (int i = 0; i < rows; i++) {
 			int idx = loadScroll + i;
-			if (idx >= loadList.size()) break;
+			if (idx >= loadRows.size()) break;
 			int ry = y + 16 + i * 13;
 			if (mx >= x + 4 && mx <= x + w - 4 && my >= ry && my <= ry + 12) {
-				String name = loadList.get(idx);
+				String name = loadRows.get(idx);
+				if (isHeader(name)) return true;
 				if (name.equals(previewName)) closeLoad(true); // click it again = load
 				else preview(name);
 				return true;
@@ -1127,6 +1331,8 @@ public class OrdealAnimatorScreen extends Screen {
 		}
 		if (modal == 2)
 			return loadModalClick(mx, my);
+		if (modal == 3)
+			return importModalClick(mx, my);
 
 		if (ctxOpen) {
 			int idx = ctxHit(mx, my);
@@ -1455,7 +1661,12 @@ public class OrdealAnimatorScreen extends Screen {
 	@Override
 	public boolean mouseScrolled(double mx, double my, double sx, double sy) {
 		if (modal == 2) {
-			loadScroll = Math.max(0, Math.min(Math.max(0, loadList.size() - LOAD_ROWS), loadScroll - (int) sy));
+			loadScroll = Math.max(0, Math.min(Math.max(0, loadRows.size() - LOAD_ROWS), loadScroll - (int) sy));
+			return true;
+		}
+		if (modal == 3) {
+			int max = importPick == null ? 0 : Math.max(0, importPick.names.size() - IMPORT_ROWS);
+			importScroll = Math.max(0, Math.min(max, importScroll - (int) sy));
 			return true;
 		}
 		if (my >= dsTop) {
@@ -1542,6 +1753,14 @@ public class OrdealAnimatorScreen extends Screen {
 			}
 			return nameBox.keyPressed(keyCode, scanCode, modifiers);
 		}
+		if (modal == 3) {
+			if (keyCode == GLFW.GLFW_KEY_ESCAPE) { modal = 0; importPick = null; return true; }
+			if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+				runImport();
+				return true;
+			}
+			return true;
+		}
 		if (modal == 2) {
 			if (keyCode == GLFW.GLFW_KEY_ESCAPE) { closeLoad(false); return true; }
 			if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
@@ -1549,10 +1768,16 @@ public class OrdealAnimatorScreen extends Screen {
 				return true;
 			}
 			if (keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_DOWN) {
-				int i = previewName == null ? -1 : loadList.indexOf(previewName);
-				i = Math.max(0, Math.min(loadList.size() - 1, i + (keyCode == GLFW.GLFW_KEY_DOWN ? 1 : -1)));
-				if (!loadList.isEmpty()) {
-					preview(loadList.get(i));
+				int step = keyCode == GLFW.GLFW_KEY_DOWN ? 1 : -1;
+				int i = previewName == null ? -1 : loadRows.indexOf(previewName);
+				// walk past the headings so arrowing never lands on one
+				for (int guard = 0; guard < loadRows.size(); guard++) {
+					i += step;
+					if (i < 0 || i >= loadRows.size()) { i = -1; break; }
+					if (!isHeader(loadRows.get(i))) break;
+				}
+				if (i >= 0) {
+					preview(loadRows.get(i));
 					if (i < loadScroll) loadScroll = i;
 					if (i >= loadScroll + LOAD_ROWS) loadScroll = i - LOAD_ROWS + 1;
 				}

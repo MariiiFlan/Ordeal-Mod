@@ -24,6 +24,27 @@ public class AbilityCallProcedure {
 				if (("Phoenix Spear").equals(net.mcreator.ordeal.AbilityHold.pressed(entity))) {
 					PhoenixSpear0Procedure.execute(world, entity);
 				}
+				if (("Phoenix Flames").equals(net.mcreator.ordeal.AbilityHold.pressed(entity))) {
+					PhoenixFlames0Procedure.execute(world, entity);
+				}
+				if (("Descending Meteor").equals(net.mcreator.ordeal.AbilityHold.pressed(entity))) {
+					DescendingMeteor0Procedure.execute(world, entity);
+				}
+				if (("Trochos Armaton").equals(net.mcreator.ordeal.AbilityHold.pressed(entity))) {
+					TrochosArmaton0Procedure.execute(world, entity);
+				}
+				if (("Akontio").equals(net.mcreator.ordeal.AbilityHold.pressed(entity))) {
+					Akonito0Procedure.execute(world, entity);
+				}
+				if (("Claymore").equals(net.mcreator.ordeal.AbilityHold.pressed(entity))) {
+					Claymore0Procedure.execute(world, entity);
+				}
+				if (("Breath of the Phoenix").equals(net.mcreator.ordeal.AbilityHold.pressed(entity))) {
+					BreathOfThePhoenix0Procedure.execute(world, entity);
+				}
+				if (("Tomas").equals(net.mcreator.ordeal.AbilityHold.pressed(entity))) {
+					Tomas0Procedure.execute(world, entity);
+				}
 			}
 		}
 	}

@@ -31,5 +31,17 @@
   "effect.ordeal.phoenix_spear": "Phoenix Spear",
   "key.ordeal.ability_row_swap_key": "Combat Row Swap",
   "subtitles.gaurd_break": "gaurd_break",
-  "effect.ordeal.in_combat": "In Combat"
+  "effect.ordeal.in_combat": "In Combat",
+  "effect.ordeal.movement_stunned": "Stunned",
+  "effect.ordeal.descending_meteor": "Descending Meteor",
+  "effect.ordeal.trochos_armaton_forward": "Trochos Armaton Forward",
+  "effect.ordeal.back_dash": "Dash",
+  "effect.ordeal.trochos_armaton_back": "Trochos Armaton",
+  "effect.ordeal.neglet_fall_dmg": "Neglet Fall Dmg",
+  "item.ordeal.ilios_claymore": "Ilios Claymore",
+  "effect.ordeal.breathof_phoenix": "Breathof Phoenix",
+  "effect.ordeal.camera_lock_potion": "Camera Lock",
+  "item.ordeal.akontio": "Akontio",
+  "item.ordeal.fruit_of_pure_chi": "Fruit of Pure Chi",
+  "key.ordeal.panoply_equip": "Panoply Equip"
 }

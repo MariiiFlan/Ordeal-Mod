@@ -54,6 +54,11 @@ public class OrdealModKeyMappings {
 			if (isDownOld != isDown && isDown) {
 				PacketDistributor.sendToServer(new Ability1Message(0, 0));
 				Ability1Message.pressAction(Minecraft.getInstance().player, 0, 0);
+				ABILITY_1_LASTPRESS = System.currentTimeMillis();
+			} else if (isDownOld != isDown && !isDown) {
+				int dt = (int) (System.currentTimeMillis() - ABILITY_1_LASTPRESS);
+				PacketDistributor.sendToServer(new Ability1Message(1, dt));
+				Ability1Message.pressAction(Minecraft.getInstance().player, 1, dt);
 			}
 			isDownOld = isDown;
 		}
@@ -67,6 +72,11 @@ public class OrdealModKeyMappings {
 			if (isDownOld != isDown && isDown) {
 				PacketDistributor.sendToServer(new Ability2Message(0, 0));
 				Ability2Message.pressAction(Minecraft.getInstance().player, 0, 0);
+				ABILITY_2_LASTPRESS = System.currentTimeMillis();
+			} else if (isDownOld != isDown && !isDown) {
+				int dt = (int) (System.currentTimeMillis() - ABILITY_2_LASTPRESS);
+				PacketDistributor.sendToServer(new Ability2Message(1, dt));
+				Ability2Message.pressAction(Minecraft.getInstance().player, 1, dt);
 			}
 			isDownOld = isDown;
 		}
@@ -80,6 +90,11 @@ public class OrdealModKeyMappings {
 			if (isDownOld != isDown && isDown) {
 				PacketDistributor.sendToServer(new Ability3Message(0, 0));
 				Ability3Message.pressAction(Minecraft.getInstance().player, 0, 0);
+				ABILITY_3_LASTPRESS = System.currentTimeMillis();
+			} else if (isDownOld != isDown && !isDown) {
+				int dt = (int) (System.currentTimeMillis() - ABILITY_3_LASTPRESS);
+				PacketDistributor.sendToServer(new Ability3Message(1, dt));
+				Ability3Message.pressAction(Minecraft.getInstance().player, 1, dt);
 			}
 			isDownOld = isDown;
 		}
@@ -93,6 +108,11 @@ public class OrdealModKeyMappings {
 			if (isDownOld != isDown && isDown) {
 				PacketDistributor.sendToServer(new Ability4Message(0, 0));
 				Ability4Message.pressAction(Minecraft.getInstance().player, 0, 0);
+				ABILITY_4_LASTPRESS = System.currentTimeMillis();
+			} else if (isDownOld != isDown && !isDown) {
+				int dt = (int) (System.currentTimeMillis() - ABILITY_4_LASTPRESS);
+				PacketDistributor.sendToServer(new Ability4Message(1, dt));
+				Ability4Message.pressAction(Minecraft.getInstance().player, 1, dt);
 			}
 			isDownOld = isDown;
 		}
@@ -106,6 +126,11 @@ public class OrdealModKeyMappings {
 			if (isDownOld != isDown && isDown) {
 				PacketDistributor.sendToServer(new Ability5Message(0, 0));
 				Ability5Message.pressAction(Minecraft.getInstance().player, 0, 0);
+				ABILITY_5_LASTPRESS = System.currentTimeMillis();
+			} else if (isDownOld != isDown && !isDown) {
+				int dt = (int) (System.currentTimeMillis() - ABILITY_5_LASTPRESS);
+				PacketDistributor.sendToServer(new Ability5Message(1, dt));
+				Ability5Message.pressAction(Minecraft.getInstance().player, 1, dt);
 			}
 			isDownOld = isDown;
 		}
@@ -123,6 +148,12 @@ public class OrdealModKeyMappings {
 			isDownOld = isDown;
 		}
 	};
+	public static final KeyMapping PANOPLY_EQUIP = new KeyMapping("key.ordeal.panoply_equip", GLFW.GLFW_KEY_N, "key.categories.ordeal");
+	private static long ABILITY_1_LASTPRESS = 0;
+	private static long ABILITY_2_LASTPRESS = 0;
+	private static long ABILITY_3_LASTPRESS = 0;
+	private static long ABILITY_4_LASTPRESS = 0;
+	private static long ABILITY_5_LASTPRESS = 0;
 
 	@SubscribeEvent
 	public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
@@ -134,6 +165,7 @@ public class OrdealModKeyMappings {
 		event.register(ABILITY_4);
 		event.register(ABILITY_5);
 		event.register(ABILITY_ROW_SWAP_KEY);
+		event.register(PANOPLY_EQUIP);
 	}
 
 	@EventBusSubscriber(Dist.CLIENT)

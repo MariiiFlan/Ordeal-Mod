@@ -23,6 +23,7 @@ import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.mcreator.ordeal.network.OrdealModVariables;
 import net.mcreator.ordeal.core.OrdealCombat;
+import net.mcreator.ordeal.AbilityHold;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,9 +79,8 @@ public class OrdealHud {
 		chiBar(g, p, v, combat, w, h);
 		if (combat) slots(g, v, w, h);
 		combo(g, p, w, h, combat);
-		dashPips(g, w, h, combat);
-		net.mcreator.ordeal.AbilityCallout.draw(g, w, h, combat);
 		sense(g, p, v, w);
+		dashBars(g, w, h, combat);
 		net.mcreator.ordeal.OrdealVfx.drawFlash(g, partial, w, h);
 		RenderSystem.disableBlend();
 	}
@@ -102,11 +102,14 @@ public class OrdealHud {
 
 		int bx = x + HEAD + 8;
 		int armor = p.getArmorValue();
-		int rows = (combat ? 3 : 2) + (armor > 0 ? 1 : 0);
+		// guard is always worth seeing - it is what stands between a hit and your
+		// health whether or not you are in the stance
+		boolean showGuard = v.guardMax > 0;
+		int rows = (showGuard ? 3 : 2) + (armor > 0 ? 1 : 0);
 		int rowH = 10, gap = 2;
 		int by = y + (HEAD + 4 - (rows * rowH + (rows - 1) * gap)) / 2;
 
-		if (combat) {
+		if (showGuard) {
 			boolean broke = v.guard <= 0;
 			boolean locked = v.guardRegenTick > 0;
 			double max = Math.max(1, v.guardMax);
@@ -190,32 +193,185 @@ public class OrdealHud {
 
 	// ---- centre: chi ---------------------------------------------------------
 
-	/** Top edge of the chi bar - anything stacking above the hotbar lines up on this. */
-	public static int chiBarTop(int h, boolean combat) {
-		return combat ? h - HOTBAR_CLEAR - 11 - 30 - 16 : h - HOTBAR_CLEAR - 12;
-	}
-
+	/**
+	 * One bar, one zone per pool. Your own chi is anchored left in the base colour
+	 * and each equipped talent's reserve continues in that talent's accent.
+	 *
+	 * Each zone is filled against ITS OWN max rather than a shared scale — a 450
+	 * reserve next to a 400 personal pool would otherwise squash your own half
+	 * until a full-charge spear moved the bar by six pixels and you could not read
+	 * your own resource mid-fight.
+	 */
 	private static void chiBar(GuiGraphics g, Player p, OrdealModVariables.PlayerVariables v,
 			boolean combat, int w, int h) {
 		double chiMax = Math.max(1, v.chiMax);
-		boolean idleFull = !combat && v.chi >= chiMax && v.chiCharging <= 0;
 
-		int bw = combat ? 168 : 150;
+		// which talent reserves exist right now, and in what colour
+		int pools = 0;
+		double[] cur = new double[2], cap = new double[2];
+		int[] col = new int[2];
+		for (int slot = 1; slot <= 2; slot++) {
+			double m = net.mcreator.ordeal.core.OrdealTalentChi.max(v, slot);
+			if (m <= 0) continue;
+			var t = OrdealTalents.get(slot == 1 ? v.talent1_id : v.talent2_id);
+			cur[pools] = net.mcreator.ordeal.core.OrdealTalentChi.get(v, slot);
+			cap[pools] = m;
+			col[pools] = t != null ? t.accent : OrdealDraw.ILIOS;
+			pools++;
+		}
+
+		boolean reserveFull = true;
+		for (int i = 0; i < pools; i++) if (cur[i] < cap[i]) reserveFull = false;
+		boolean idleFull = !combat && v.chi >= chiMax && v.chiCharging <= 0 && reserveFull;
+
+		// the readout carries every pool, so nothing has to be crammed into a zone
+		String cv = Math.round(v.chi) + "/" + Math.round(chiMax);
+		String[] rv = new String[pools];
+		int readW = font(cv);
+		for (int i = 0; i < pools; i++) {
+			rv[i] = "  " + Math.round(cur[i]) + "/" + Math.round(cap[i]);
+			readW += font(rv[i]);
+		}
+
+		int bw = (combat ? 168 : 150) + (readW - font(cv)) + pools * 18;
 		int x = (w - bw) / 2;
 		int y = chiBarTop(h, combat);
 
 		int a = idleFull ? 0x28 : 0xFF;
 		OrdealDraw.rect(g, x, y, bw, 12, idleFull ? 0x14060A10 : SCRIM);
 		OrdealDraw.text(g, "CHI", x + 4, y + 2, OrdealDraw.alpha(0xFF9FD4E8, a));
-		String cv = Math.round(v.chi) + "/" + Math.round(chiMax);
-		int tx = x + 22, tw = bw - 22 - font(cv) - 16;
+
+		int tx = x + 22, tw = bw - 22 - readW - 16;
 		OrdealDraw.rect(g, tx, y + 2, tw, 8, OrdealDraw.alpha(0xFF000000, idleFull ? 0x20 : 0x6B));
-		int fw = (int) Math.round(Math.max(0, Math.min(1, v.chi / chiMax)) * (tw - 2));
-		if (fw > 0) OrdealDraw.rect(g, tx + 1, y + 3, fw, 6, OrdealDraw.alpha(CY, a));
-		for (int i = 10; i < tw; i += 10) OrdealDraw.rect(g, tx + i, y + 2, 1, 8, 0x9E000000);
+
+		// One continuous run of fill inside the track. Every zone is measured off
+		// this same strip and none of them inset, so the colours meet edge to
+		// edge with no gap between your chi and the reserve.
+		int fx = tx + 1, ftot = tw - 2;
+		int mine = pools == 0 ? ftot : (int) Math.round(ftot * (pools == 1 ? 0.62 : 0.52));
+		int rest = ftot - mine;
+
+		notePool(0, v.chi);
+		zone(g, fx, y, mine, v.chi, chiMax, hot(CY, 0), a);
+		int zx = fx + mine;
+		double capSum = 0;
+		for (int i = 0; i < pools; i++) capSum += cap[i];
+		for (int i = 0; i < pools; i++) {
+			int zw = i == pools - 1 ? fx + ftot - zx : (int) Math.round(rest * (cap[i] / capSum));
+			notePool(i + 1, cur[i]);
+			zone(g, zx, y, zw, cur[i], cap[i], hot(col[i], i + 1), a);
+			zx += zw;
+		}
+
 		OrdealDraw.outline(g, tx, y + 2, tw, 8, OrdealDraw.alpha(0xFF7ED8F5, idleFull ? 0x1C : 0x73));
-		OrdealDraw.textRight(g, cv, x + bw - 12, y + 2, OrdealDraw.alpha(0xFFDFF3FB, a));
-		if (v.chiCharging > 0) OrdealDraw.text(g, "^", x + bw - 8, y + 2, CY);
+
+		// right to left: each reserve in its talent's colour, then your own
+		int rx = x + bw - 12;
+		for (int i = pools - 1; i >= 0; i--) {
+			OrdealDraw.textRight(g, rv[i], rx, y + 2, OrdealDraw.alpha(col[i], a));
+			rx -= font(rv[i]);
+		}
+		OrdealDraw.textRight(g, cv, rx, y + 2, OrdealDraw.alpha(0xFFDFF3FB, a));
+
+		charging(g, p, v, x, y, bw);
+	}
+
+	/**
+	 * Dash charges: one narrow column immediately left of the ability row, the
+	 * same height as a slot, filling from the bottom up, with the count sitting
+	 * on the same line as the Z X C V B key letters.
+	 */
+	private static void dashBars(GuiGraphics g, int w, int h, boolean combat) {
+		// dashing only exists in the stance, and out of it this column would sit
+		// straight on top of the chi bar
+		if (!combat) return;
+		int max = net.mcreator.ordeal.OrdealDash.MAX_CHARGES;
+		if (max <= 0) return;
+		int have = Math.max(0, Math.min(max, net.mcreator.ordeal.OrdealDash.Client.charges));
+
+		// same geometry slots() uses, so the column lines up with the row
+		int cell = 30, gap = 5;
+		int total = 5 * cell + 4 * gap;
+		int x0 = (w - total) / 2;
+		int y = h - HOTBAR_CLEAR - 11 - cell;
+
+		int bw = 12;
+		int x = x0 - gap - bw;
+
+		OrdealDraw.rect(g, x, y, bw, cell, 0x66060A10);
+		OrdealDraw.outline(g, x, y, bw, cell, 0x597ED8F5);
+
+		int pad = 2, segGap = 2;
+		int inner = cell - pad * 2;
+		int segH = Math.max(2, (inner - (max - 1) * segGap) / max);
+		int stackH = max * segH + (max - 1) * segGap;
+		int top = y + pad + (inner - stackH) / 2;
+		for (int i = 0; i < max; i++) {
+			int sy = top + (max - 1 - i) * (segH + segGap);   // fills bottom up
+			OrdealDraw.rect(g, x + pad, sy, bw - pad * 2, segH,
+					i < have ? 0xFF7ED8F5 : 0x33101820);
+		}
+
+		String n = have + "/" + max;
+		OrdealDraw.text(g, n, x + (bw - font(n)) / 2, y + cell + 3,
+				have > 0 ? CY : 0x66FFFFFF);
+	}
+
+	/**
+	 * Charging is a commitment - three seconds of holding sneak while somebody is
+	 * swinging at you - so it gets a real readout, not a caret.
+	 */
+	private static void charging(GuiGraphics g, Player p, OrdealModVariables.PlayerVariables v,
+			int x, int y, int bw) {
+		if (v.chiCharging <= 0) return;
+		String tag = "CHARGING";
+		int pulse = (int) (140 + 115 * Math.abs(Math.sin(System.currentTimeMillis() / 260.0)));
+		int tw = font(tag) + 8;
+		int tx = x + (bw - tw) / 2;
+		OrdealDraw.rect(g, tx, y - 12, tw, 11, 0xB3060A10);
+		OrdealDraw.outline(g, tx, y - 12, tw, 11, OrdealDraw.alpha(CY, 0x66));
+		OrdealDraw.text(g, tag, tx + 4, y - 10, OrdealDraw.alpha(CY, pulse));
+	}
+
+	/**
+	 * Top edge of the chi bar. AbilityCallout anchors to this so the callout can
+	 * never land on top of the bar - the two used to be positioned independently
+	 * and drifted into each other.
+	 */
+	public static int chiBarTop(int h, boolean combat) {
+		return combat ? h - HOTBAR_CLEAR - 11 - 30 - 16 : h - HOTBAR_CLEAR - 12;
+	}
+
+	/** One pool's slice of the chi track, filled against its own max. */
+	/**
+	 * A reserve is huge next to a single ability, so one chi leaving it moves the
+	 * fill by a fraction of a pixel and reads as nothing happening. Remember what
+	 * each pool was worth and flash the one that just paid, so you can see WHICH
+	 * pool is covering a charge rather than only the number changing.
+	 */
+	private static final double[] lastSeen = new double[3];
+	private static final int[] flash = new int[3];
+
+	private static void notePool(int i, double value) {
+		if (value < lastSeen[i] - 0.0001) flash[i] = 6;
+		else if (flash[i] > 0) flash[i]--;
+		lastSeen[i] = value;
+	}
+
+	private static int hot(int colour, int i) {
+		if (flash[i] <= 0) return colour;
+		int r = Math.min(255, ((colour >> 16) & 0xFF) + 90);
+		int gg = Math.min(255, ((colour >> 8) & 0xFF) + 90);
+		int b = Math.min(255, (colour & 0xFF) + 90);
+		return 0xFF000000 | (r << 16) | (gg << 8) | b;
+	}
+
+	private static void zone(GuiGraphics g, int zx, int y, int zw,
+			double value, double max, int colour, int alpha) {
+		if (zw <= 0) return;
+		int fw = (int) Math.round(Math.max(0, Math.min(1, value / Math.max(1, max))) * zw);
+		if (fw > 0) OrdealDraw.rect(g, zx, y + 3, fw, 6, OrdealDraw.alpha(colour, alpha));
+		for (int i = 10; i < zw; i += 10) OrdealDraw.rect(g, zx + i, y + 2, 1, 8, 0x9E000000);
 	}
 
 	// ---- bottom centre: ability slots --------------------------------------
@@ -234,8 +390,14 @@ public class OrdealHud {
 			OrdealTalents.Talent owner = bound.isEmpty() ? null : OrdealTalents.ownerOfName(bound);
 			int x = x0 + i * (cell + gap);
 
-			double cd = cooldown(offset + i + 1);
-			double cdTotal = ab != null ? Math.max(1, ab.cdTicks * (1.0 - Math.min(0.35, v.statAgility * 0.0035))) : 1;
+			// The last second of every MCreator cooldown is already usable - that is
+			// what AbilityHold.CD_READY_AT means - so the readout drops that second
+			// too. The slot goes live the instant the number would have read 0:
+			// 3, 2, 1, done. No tenths, no dead second at the end.
+			double cd = Math.max(0, cooldown(offset + i + 1) - AbilityHold.CD_READY_AT);
+			double cdTotal = ab != null
+					? Math.max(1, ab.cdTicks * (1.0 - Math.min(0.35, v.statAgility * 0.0035)) - AbilityHold.CD_READY_AT)
+					: 1;
 			boolean poor = ab != null && cd <= 0 && cost(ab, v) > v.chi;
 
 			int accent = ab == null ? 0x4D7ED8F5 : owner != null ? owner.accent : CY;
@@ -245,35 +407,29 @@ public class OrdealHud {
 			OrdealDraw.rect(g, x, y, cell, cell, bg);
 			if (ab != null) {
 				if (ab.iconTex != null) {
-					OrdealDraw.icon(g, ab.iconTex, x + 3, y + 3, cell - 6);
+					g.blit(ab.iconTex, x + 3, y + 3, 0, 0, cell - 6, cell - 6, cell - 6, cell - 6);
 				} else {
 					String glyph = poor ? String.valueOf((int) cost(ab, v)) : ab.icon;
 					OrdealDraw.text(g, glyph, x + (cell - font(glyph)) / 2, y + (cell - 8) / 2,
 							poor ? 0xFFFF5A5A : accent);
 				}
 			}
-			// the slot itself is the charge meter - heat rises over the glyph
+			// the forge meter: after the icon, before the cooldown sweep
 			net.mcreator.ordeal.ChargeMeter.draw(g, x, y, cell, i, bound, accent);
-			if (cd > 0) {
-				// the whole slot goes dark and the unspent part of the cooldown
-				// drains downward off it, so "can't use this" reads at a glance
-				// rather than having to find a small number
-				double f = Math.min(1, cd / cdTotal);
-				int fh = (int) Math.round(f * cell);
-				OrdealDraw.rect(g, x, y, cell, cell, 0x8C05090F);
-				OrdealDraw.rect(g, x, y + cell - fh, cell, fh, 0xA6040A14);
-				if (fh > 0 && fh < cell)
-					OrdealDraw.rect(g, x, y + cell - fh, cell, 1, OrdealDraw.alpha(accent, 0xCC));
 
-				// seconds, centred and readable over the dim
-				String t = cd >= 20 ? String.valueOf((int) Math.ceil(cd / 20.0))
-						: String.format("%.1f", cd / 20.0);
-				int tw = font(t);
-				OrdealDraw.rect(g, x + (cell - tw) / 2 - 2, y + (cell - 8) / 2 - 1,
-						tw + 4, 10, 0xB3000000);
-				OrdealDraw.text(g, t, x + (cell - tw) / 2, y + (cell - 8) / 2, 0xFFEAF7FF);
+			if (cd > 0) {
+				// the whole slot dims so it reads as unavailable at a glance, and
+				// the lighter block drains downward as the cooldown runs out
+				OrdealDraw.rect(g, x, y, cell, cell, 0xC004080E);
+				int fh = (int) Math.round(Math.min(1, cd / cdTotal) * cell);
+				OrdealDraw.rect(g, x, y + cell - fh, cell, fh, 0x66101B24);
+				OrdealDraw.rect(g, x, y + cell - fh, cell, 1, 0x99B6C2D2);
+				// whole seconds only
+				String t = String.valueOf((int) Math.ceil(cd / 20.0));
+				OrdealDraw.text(g, t, x + (cell - font(t)) / 2, y + (cell - 8) / 2, 0xFFDCE6EF);
+				frame = 0x9997A3AD;   // grey frame while it is down
 			}
-			OrdealDraw.outline(g, x, y, cell, cell, cd > 0 ? 0x8C5A6672 : frame);
+			OrdealDraw.outline(g, x, y, cell, cell, frame);
 			OrdealDraw.brackets(g, x, y, cell, cell, 5, frame);
 			OrdealDraw.text(g, KEYS[i], x + (cell - font(KEYS[i])) / 2, y + cell + 3,
 					ab != null ? 0xD9FFFFFF : 0x66FFFFFF);
@@ -310,38 +466,28 @@ public class OrdealHud {
 		return inst == null ? 0 : inst.getDuration();
 	}
 
+	private static final java.util.Map<String, MobEffect> EFFECT_CACHE = new java.util.HashMap<>();
+
 	/**
-	 * Effect elements come out of MCreator as cd_1, cd1 or CD1 depending on how
-	 * they were named, so the underscores are stripped before comparing. An
-	 * exact match was silently failing and taking the whole cooldown display
-	 * down with it.
+	 * MCreator picks the registry path itself, so an element named Cd1 can land as
+	 * either "cd1" or "cd_1". Strip the underscores on both sides and it does not
+	 * matter which one it chose.
+	 *
+	 * Only a HIT is cached - caching a miss would freeze the lookup for the rest
+	 * of the session if it ran before the registry was populated.
 	 */
 	private static MobEffect effect(String path) {
-		String want = path.replace("_", "");
-		for (var e : BuiltInRegistries.MOB_EFFECT.entrySet())
-			if (e.getKey().location().getNamespace().equals("ordeal")
-					&& e.getKey().location().getPath().replace("_", "").equalsIgnoreCase(want))
+		String want = path.replace("_", "").toLowerCase();
+		MobEffect hit = EFFECT_CACHE.get(want);
+		if (hit != null) return hit;
+		for (var e : BuiltInRegistries.MOB_EFFECT.entrySet()) {
+			if (!e.getKey().location().getNamespace().equals("ordeal")) continue;
+			if (e.getKey().location().getPath().replace("_", "").equalsIgnoreCase(want)) {
+				EFFECT_CACHE.put(want, e.getValue());
 				return e.getValue();
-		return null;
-	}
-
-	// ---- dash pips ----------------------------------------------------------
-	// Three little diamonds under the hotbar centre; dim ones are recharging.
-	/** Dash charges stack up the left edge of the hotbar, filling from the bottom. */
-	private static void dashPips(GuiGraphics g, int w, int h, boolean combat) {
-		int charges = net.mcreator.ordeal.OrdealDash.Client.charges;
-		int max = net.mcreator.ordeal.OrdealDash.MAX_CHARGES;
-		if (max <= 0 || (!combat && charges >= max)) return;
-
-		int pipW = 7, pipH = 3, gap = 2;
-		int x = w / 2 - 91 - pipW - 3;          // just left of the 182px hotbar
-		int bottom = h - 3;
-		for (int i = 0; i < max; i++) {
-			int y = bottom - pipH - i * (pipH + gap);
-			boolean on = i < charges;
-			OrdealDraw.rect(g, x - 1, y - 1, pipW + 2, pipH + 2, 0x8C000000);
-			OrdealDraw.rect(g, x, y, pipW, pipH, on ? CY : 0x4029414F);
+			}
 		}
+		return null;
 	}
 
 	// ---- combo chain --------------------------------------------------------
@@ -353,44 +499,47 @@ public class OrdealHud {
 		double frac = left / (double) net.mcreator.ordeal.OrdealCombo.WINDOW_TICKS;
 
 		int colour = n >= 12 ? 0xFFFFFFFF : n >= 6 ? CY : 0xCCCFE6F2;
-		int x = w - 6, y = combat ? h - HOTBAR_CLEAR - 11 - 30 - 40 : h - HOTBAR_CLEAR - 40;
 
-		// The counter rides next to whoever you're hitting; the old corner
-		// spot is the fallback when the target is gone or off screen.
-		var mc = net.minecraft.client.Minecraft.getInstance();
-		int targetId = p.getPersistentData().getInt("ordeal_combo_target");
-		if (targetId > 0 && mc.level != null
-				&& mc.level.getEntity(targetId) instanceof net.minecraft.world.entity.LivingEntity tle
-				&& tle.isAlive()) {
-			// anchor a world point just off the mob's right shoulder, so the
-			// counter clears the model at any size or distance
-			var camR = new org.joml.Vector3f(
-					mc.gameRenderer.getMainCamera().getLeftVector()).negate();
-			double off = tle.getBbWidth() * 0.5 + 0.55;
-			float[] pt = net.mcreator.ordeal.OrdealVfx.project(
-					tle.position().add(camR.x * off, tle.getBbHeight() * 0.85, camR.z * off));
-			if (pt != null) {
-				x = Math.max(74, Math.min(w - 6, (int) pt[0] + 52));
-				y = Math.max(28, Math.min(h - 60, (int) pt[1] - 6));
+		// The chain belongs to whoever you are hitting, so it rides beside them.
+		// The server mirrors the target's entity id down with the combo payload;
+		// the bottom right is only the fallback for when they are gone or the
+		// projection lands off screen.
+		final int BLOCK_W = 60;
+		int bx = w - 6 - BLOCK_W;
+		int by = combat ? h - HOTBAR_CLEAR - 11 - 30 - 40 : h - HOTBAR_CLEAR - 40;
+
+		int id = p.getPersistentData().getInt("ordeal_combo_target");
+		if (id > 0) {
+			var level = Minecraft.getInstance().level;
+			Entity t = level == null ? null : level.getEntity(id);
+			if (t != null && t.isAlive()) {
+				float[] pr = net.mcreator.ordeal.OrdealVfx.project(
+						new Vec3(t.getX(), t.getY() + t.getBbHeight() * 0.6, t.getZ()));
+				if (pr != null) {
+					bx = (int) pr[0] + 22;
+					by = (int) pr[1] - 8;
+					// never let it run off the right edge
+					bx = Math.min(bx, w - 4 - BLOCK_W);
+				}
 			}
 		}
 
 		String num = String.valueOf(n);
 		float scale = left > net.mcreator.ordeal.OrdealCombo.WINDOW_TICKS - 4 ? 1.9f : 1.4f;
 		g.pose().pushPose();
-		g.pose().translate(x - 26, y, 0);
+		g.pose().translate(bx, by, 0);
 		g.pose().scale(scale, scale, 1f);
-		OrdealDraw.textRight(g, num, 0, 0, colour);
+		OrdealDraw.text(g, num, 0, 0, colour);
 		g.pose().popPose();
 
-		OrdealDraw.text(g, "HIT", x - 22, y + 6, colour);
+		int numW = (int) Math.ceil(font(num) * scale);
+		OrdealDraw.text(g, "HIT", bx + numW + 4, by + 6, colour);
 		String mult = "x" + String.format("%.2f", net.mcreator.ordeal.OrdealCombo.damageMult(p));
-		OrdealDraw.textRight(g, mult, x, y + 18, 0xB3FFFFFF);
+		OrdealDraw.text(g, mult, bx, by + 18, 0xB3FFFFFF);
 
-		int bw = 60;
-		OrdealDraw.rect(g, x - bw, y + 28, bw, 3, 0x80000000);
-		int fw = (int) Math.round(bw * Math.max(0, Math.min(1, frac)));
-		OrdealDraw.rect(g, x - fw, y + 28, fw, 3, colour);
+		OrdealDraw.rect(g, bx, by + 28, BLOCK_W, 3, 0x80000000);
+		int fw = (int) Math.round(BLOCK_W * Math.max(0, Math.min(1, frac)));
+		OrdealDraw.rect(g, bx, by + 28, fw, 3, colour);
 	}
 
 	// ---- right: chi sense ---------------------------------------------------
@@ -425,12 +574,9 @@ public class OrdealHud {
 				add(lines, colours, "DETAIL", "PRESENCE ONLY", 0xFF41677A);
 			} else {
 				OrdealTalents.Talent t = OrdealTalents.get(tv.talent1_id);
-				boolean kimyo = "kimyo".equals(tv.race) || t != null;
+				boolean kimyo = t != null;
 				add(lines, colours, "NAME", target.getGameProfile().getName().toUpperCase(), INK);
-				add(lines, colours, "RACE", kimyo ? "KIMYO" : "HUMAN", kimyo ? (t != null ? t.accent : 0xFFF2A63C) : LABEL);
-				double pres = net.mcreator.ordeal.OrdealSilhouette.presence(tv);
-				add(lines, colours, "PRESENCE", net.mcreator.ordeal.OrdealSilhouette.bandName(pres),
-						net.mcreator.ordeal.OrdealSilhouette.bandColour(pres));
+				add(lines, colours, "RACE", kimyo ? "KIMYO" : "HUMAN", kimyo ? t.accent : LABEL);
 				add(lines, colours, "CHI LEVEL", chiBand(tv), 0xFFDFF3FB);
 				if (tier >= 3 && kimyo)
 					add(lines, colours, "TYPE", "<" + String.join("> <", t.types) + ">", 0xFF8FB6C7);
@@ -501,47 +647,29 @@ public class OrdealHud {
 	}
 
 	private static void mobDebug(GuiGraphics g, net.minecraft.world.entity.LivingEntity le, int w) {
-		var tag = le.getPersistentData();
-		double xp = tag.getDouble(net.mcreator.ordeal.OrdealMobStats.XP);
+		double xp = le.getPersistentData().getDouble("ordeal_xp");
 		if (xp <= 0) xp = le.getMaxHealth() * 0.5;
-		double str = tag.getDouble(net.mcreator.ordeal.OrdealMobStats.STR);
-		double dur = tag.getDouble(net.mcreator.ordeal.OrdealMobStats.DUR);
-		String race = tag.getString(net.mcreator.ordeal.OrdealMobStats.RACE);
-		boolean kimyo = "kimyo".equals(race);
-		OrdealTalents.Talent t = kimyo
-				? OrdealTalents.get(tag.getString(net.mcreator.ordeal.OrdealMobStats.TALENT)) : null;
 		double atk = 0;
 		var attr = le.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
 		if (attr != null) atk = attr.getValue();
 
-		List<String[]> rows = new ArrayList<>();
-		List<Integer> cols = new ArrayList<>();
-		add(rows, cols, "TYPE", le.getType().getDescription().getString().toUpperCase(), INK);
-		add(rows, cols, "RACE", kimyo ? "KIMYO" : "HUMAN",
-				kimyo ? (t != null ? t.accent : 0xFFF2A63C) : INK);
-		double pres = net.mcreator.ordeal.OrdealSilhouette.presenceMob(le);
-		add(rows, cols, "PRESENCE", net.mcreator.ordeal.OrdealSilhouette.bandName(pres),
-				net.mcreator.ordeal.OrdealSilhouette.bandColour(pres));
-		if (t != null) add(rows, cols, "TALENT", t.shortName, t.accent);
-		add(rows, cols, "HP", fmt(le.getHealth()) + " / " + fmt(le.getMaxHealth()), INK);
-		add(rows, cols, "ATK", atk > 0 ? fmt(atk) : "-", INK);
-		if (str > 0) add(rows, cols, "STR", fmt(str), INK);
-		if (dur > 0) {
-			add(rows, cols, "DUR", fmt(dur), INK);
-			add(rows, cols, "GUARD MAX", fmt(net.mcreator.ordeal.core.OrdealCombat.mobGuardMax(dur)), INK);
-		}
-		add(rows, cols, "ARMOR", String.valueOf(le.getArmorValue()), INK);
-		add(rows, cols, "XP WORTH", fmt(xp), INK);
+		String[][] rows = {
+			{ "TYPE", le.getType().getDescription().getString().toUpperCase() },
+			{ "HP", fmt(le.getHealth()) + " / " + fmt(le.getMaxHealth()) },
+			{ "ATK", atk > 0 ? fmt(atk) : "-" },
+			{ "ARMOR", String.valueOf(le.getArmorValue()) },
+			{ "XP WORTH", fmt(xp) },
+		};
 
 		int x = w - 6 - SENSE_W, y = 44;
-		int h = 18 + rows.size() * 11 + 4;
+		int h = 18 + rows.length * 11 + 4;
 		OrdealDraw.rect(g, x, y, SENSE_W, h, 0xC7060A10);
 		OrdealDraw.outline(g, x, y, SENSE_W, h, 0xFF5FE3A0);
 		OrdealDraw.text(g, "DEBUG SENSE", x + 6, y + 5, 0xFF5FE3A0);
 		OrdealDraw.textRight(g, "MOB", x + SENSE_W - 6, y + 5, 0xFF5FE3A0);
-		for (int i = 0; i < rows.size(); i++) {
-			OrdealDraw.text(g, rows.get(i)[0], x + 6, y + 18 + i * 11, CY_DIM);
-			OrdealDraw.textRight(g, rows.get(i)[1], x + SENSE_W - 6, y + 18 + i * 11, cols.get(i));
+		for (int i = 0; i < rows.length; i++) {
+			OrdealDraw.text(g, rows[i][0], x + 6, y + 18 + i * 11, CY_DIM);
+			OrdealDraw.textRight(g, rows[i][1], x + SENSE_W - 6, y + 18 + i * 11, INK);
 		}
 	}
 
@@ -584,8 +712,6 @@ public class OrdealHud {
 	/** The K.O.D.E block owns health, food and armour full-time. */
 	@EventBusSubscriber(modid = "ordeal", value = Dist.CLIENT)
 	public static class Vanilla {
-		private static boolean shiftedOverlay = false;
-
 		@SubscribeEvent
 		public static void onLayer(RenderGuiLayerEvent.Pre event) {
 			LocalPlayer p = Minecraft.getInstance().player;
@@ -596,23 +722,6 @@ public class OrdealHud {
 					|| id.equals(VanillaGuiLayers.ARMOR_LEVEL)
 					|| id.equals(VanillaGuiLayers.AIR_LEVEL))
 				event.setCanceled(true);
-
-			// in combat mode the action bar text would sit inside the ability
-			// slots, so it slides up above the chi bar instead
-			if (id.equals(VanillaGuiLayers.OVERLAY_MESSAGE)
-					&& p.getData(OrdealModVariables.PLAYER_VARIABLES).combatMode) {
-				event.getGuiGraphics().pose().pushPose();
-				event.getGuiGraphics().pose().translate(0, -48, 0);
-				shiftedOverlay = true;
-			}
-		}
-
-		@SubscribeEvent
-		public static void onLayerPost(RenderGuiLayerEvent.Post event) {
-			if (shiftedOverlay && event.getName().equals(VanillaGuiLayers.OVERLAY_MESSAGE)) {
-				event.getGuiGraphics().pose().popPose();
-				shiftedOverlay = false;
-			}
 		}
 	}
 

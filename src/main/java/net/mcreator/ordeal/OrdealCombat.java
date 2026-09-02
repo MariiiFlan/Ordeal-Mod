@@ -22,12 +22,16 @@ import net.mcreator.ordeal.OrdealMobStats;
 import net.mcreator.ordeal.OrdealVfxPayload;
 import net.mcreator.ordeal.network.OrdealModVariables;
 
-/**
- * Guard sits in front of health. A hit that cannot threaten the guard bounces off it;
- * a hit that can eats into it and only reaches health once the guard is gone.
- */
 @EventBusSubscriber(modid = "ordeal")
 public class OrdealCombat {
+
+	public static double FIRE_INFUSION_STR     = net.mcreator.ordeal.OrdealTuning.d("ilios.infusion_str", 3);
+	public static double FIRE_INFUSION_BASE    = net.mcreator.ordeal.OrdealTuning.d("ilios.infusion_base", 2.0);
+	public static double FIRE_INFUSION_PER_STR = net.mcreator.ordeal.OrdealTuning.d("ilios.infusion_per_str", 0.05);
+	public static double FIRE_INFUSION_MAX     = net.mcreator.ordeal.OrdealTuning.d("ilios.infusion_max", 12.0);
+	public static int    FIRE_INFUSION_BURN    = net.mcreator.ordeal.OrdealTuning.i("ilios.infusion_burn_seconds", 4);
+	public static String FIRE_INFUSION_FX      = "photon:ilios_fireinfusion";
+	public static String FIRE_INFUSION_ID      = "fire_infusion";
 
 	public static double GUARD_BASE       = net.mcreator.ordeal.OrdealTuning.d("combat.guard_base", 25.0);
 	public static double GUARD_PER_DUR    = net.mcreator.ordeal.OrdealTuning.d("combat.guard_per_dur", 4.0);
@@ -35,7 +39,6 @@ public class OrdealCombat {
 	public static double REDUCTION_CAP    = net.mcreator.ordeal.OrdealTuning.d("combat.reduction_cap", 0.30);
 	public static double AP_PER_STR       = net.mcreator.ordeal.OrdealTuning.d("combat.ap_per_str", 0.25);
 
-	/** A hit under the target's gate cannot threaten their guard and glances off. */
 	public static double GATE_BASE   = net.mcreator.ordeal.OrdealTuning.d("combat.gate_base", 2.0);
 	public static double GATE_PER_DUR = net.mcreator.ordeal.OrdealTuning.d("combat.gate_per_dur", 0.18);
 	public static double SOFT_FLOOR  = net.mcreator.ordeal.OrdealTuning.d("combat.bounce_floor", 0.4);
@@ -43,7 +46,6 @@ public class OrdealCombat {
 
 	public static double gate(double durability) { return GATE_BASE + durability * GATE_PER_DUR; }
 
-	/** Sound played when a Guard reaches zero. This is the registered element name. */
 	public static final String BREAK_SOUND = "gaurd_break";
 
 	public static int    LOCKOUT     = net.mcreator.ordeal.OrdealTuning.i("combat.regen_lockout_ticks", 100);
@@ -90,6 +92,7 @@ public class OrdealCombat {
 			}
 			ap *= (1.0 - av.ChiConcealed);
 			ap *= OrdealCombo.damageMult(attackerP);
+			ap += fireInfusion(attackerP, target, src);
 		}
 
 		double ratio = ap / gate(tv.statDurability);
@@ -117,8 +120,7 @@ public class OrdealCombat {
 
 		tv.guardRegenTick = LOCKOUT;
 		tv.markSyncDirty();
-		// a landed blow puts BOTH sides in combat with each other for ten
-		// seconds, refreshed by every further hit - not a stance you switch on
+
 		OrdealCombatState.engage(target, src.getEntity());
 
 		report(target, dealt, absorbed, bounced, broke);
@@ -130,8 +132,7 @@ public class OrdealCombat {
 		Player p = event.getEntity();
 		if (p.level().isClientSide()) return;
 		OrdealModVariables.PlayerVariables v = p.getData(OrdealModVariables.PLAYER_VARIABLES);
-		// the lock lapses with the effect, not with the guard timer - the two
-		// run on different clocks and the opponent name has to follow the effect
+
 		if (p.tickCount % 10 == 0 && !"none".equals(v.inCombatWith)
 				&& !OrdealCombatState.inCombat(p)) {
 			v.inCombatWith = "none";
@@ -152,15 +153,12 @@ public class OrdealCombat {
 		if (p.tickCount % 5 == 0) v.markSyncDirty();
 	}
 
-	// Mobs carry their guard in persistentData; regen is computed lazily on the
-	// next hit instead of ticking every mob every tick.
 	private static final String MOB_GUARD      = "ordeal_guard";
 	private static final String MOB_GUARD_TICK = "ordeal_guard_tick";
 	private static final String MOB_GUARD_LOCK = "ordeal_guard_lock";
 
 	public static double mobGuardMax(double dur) { return GUARD_BASE + dur * GUARD_PER_DUR; }
 
-	/** Client mirror: the GUARD payload writes the server value onto the client entity. */
 	public static void clientMobGuard(LivingEntity mob, double guard, int lock) {
 		var tag = mob.getPersistentData();
 		tag.putDouble(MOB_GUARD, guard);
@@ -168,7 +166,6 @@ public class OrdealCombat {
 		tag.putInt(MOB_GUARD_LOCK, lock);
 	}
 
-	/** Current guard of a mob with rolled durability, regen applied since last hit. */
 	public static double mobGuard(LivingEntity mob, double dur) {
 		var tag = mob.getPersistentData();
 		double max = mobGuardMax(dur);
@@ -179,7 +176,6 @@ public class OrdealCombat {
 		return g;
 	}
 
-	/** Mobs run the same gate, guard and reduction rules from their rolled stats. */
 	private static void mobHit(LivingIncomingDamageEvent event, LivingEntity mob, Player attacker, DamageSource src) {
 		OrdealModVariables.PlayerVariables av = attacker.getData(OrdealModVariables.PLAYER_VARIABLES);
 		double ap = event.getAmount();
@@ -190,6 +186,7 @@ public class OrdealCombat {
 		}
 		ap *= (1.0 - av.ChiConcealed);
 		ap *= OrdealCombo.damageMult(attacker);
+		ap += fireInfusion(attacker, mob, src);
 
 		double dur = mob.getPersistentData().getDouble(OrdealMobStats.DUR);
 		boolean bounced = false, broke = false;
@@ -213,7 +210,7 @@ public class OrdealCombat {
 			tag.putDouble(MOB_GUARD, guard);
 			tag.putInt(MOB_GUARD_TICK, mob.tickCount);
 			tag.putInt(MOB_GUARD_LOCK, lock);
-			// mirror to viewers so the over-mob guard bar shows the real value
+
 			PacketDistributor.sendToPlayersTrackingEntityAndSelf(mob,
 					new OrdealVfxPayload(OrdealVfxPayload.GUARD, mob.getId(), lock, 0, (float) guard));
 		}
@@ -224,26 +221,16 @@ public class OrdealCombat {
 		event.setAmount((float) Math.max(0, ap));
 	}
 
-	/**
-	 * How recovered the swing was, inferred from the damage vanilla let
-	 * through against the attacker's full attack value. Spam clicks land
-	 * around 0.2; a fully charged swing lands at 1.0 (crits clamp to 1).
-	 */
 	private static double swingCharge(Player attacker, double rawAmount) {
 		double full = attacker.getAttributeValue(Attributes.ATTACK_DAMAGE);
 		return full <= 0 ? 1 : Math.min(1.0, rawAmount / full);
 	}
 
-	/**
-	 * Combos are rhythm, not clicks. A recovered swing adds a link, a rushed
-	 * one merely keeps the chain alive, and flailing drops it on the spot.
-	 */
 	private static void comboBeat(Player attacker, LivingEntity target, double charge) {
 		if (charge >= 0.85) OrdealCombo.land(attacker, target);
 		else if (charge < 0.55) OrdealCombo.drop(attacker);
 	}
 
-	/** Send the numbers, the bounce and the break to everyone who can see it. */
 	private static void report(LivingEntity victim, double through, double absorbed,
 			boolean bounced, boolean broke) {
 		if (!(victim.level() instanceof ServerLevel level)) return;
@@ -273,7 +260,6 @@ public class OrdealCombat {
 		}
 	}
 
-	/** Drives the existing CameraShake, which reads the "screen_shake" effect. */
 	private static void shake(LivingEntity e, int amplifier, int ticks) {
 		var key = ResourceKey.create(Registries.MOB_EFFECT,
 				ResourceLocation.fromNamespaceAndPath("ordeal", "screen_shake"));
@@ -281,10 +267,6 @@ public class OrdealCombat {
 				.ifPresent(h -> e.addEffect(new net.minecraft.world.effect.MobEffectInstance(
 						h, ticks, amplifier, false, false)));
 	}
-
-	// ---- combat mode locks the hands ---------------------------------------
-	// In combat mode you fight with what you're holding: no dropping items,
-	// no placing or breaking blocks, no picking things up.
 
 	private static boolean inCombat(Player p) {
 		return p != null && p.getData(OrdealModVariables.PLAYER_VARIABLES).combatMode;
@@ -312,7 +294,6 @@ public class OrdealCombat {
 		if (inCombat(event.getPlayer()))
 			event.setCanPickup(net.neoforged.neoforge.common.util.TriState.FALSE);
 	}
-
 
 	private static SoundEvent breakSoundCache;
 	private static boolean breakSoundLooked;
@@ -348,6 +329,45 @@ public class OrdealCombat {
 				"[ordeal] no guard break sound registered. ordeal sounds present: {}",
 				found.length() == 0 ? "(none)" : found);
 		return null;
+	}
+
+	private static double iliosStrength(OrdealModVariables.PlayerVariables v) {
+		if ("ilios".equals(v.talent1_id)) return v.talent1_strength;
+		if ("ilios".equals(v.talent2_id)) return v.talent2_strength;
+		return -1;
+	}
+
+	public static double fireInfusion(Player attacker, LivingEntity victim, DamageSource src) {
+		if (attacker == null || isTalent(src)) return 0;
+		double str = iliosStrength(attacker.getData(OrdealModVariables.PLAYER_VARIABLES));
+		var ab = net.mcreator.ordeal.core.client.OrdealTalents.ability(FIRE_INFUSION_ID);
+		double gate = ab != null && ab.req > 0 ? ab.req : FIRE_INFUSION_STR;
+		if (str < gate) return 0;
+		if (ab != null && !net.mcreator.ordeal.Passives.on(attacker, FIRE_INFUSION_ID)) return 0;
+		double cost = ab != null ? ab.chi : 0;
+		if (cost > 0 && !net.mcreator.ordeal.Passives.pay(attacker, ab.name, cost)) return 0;
+		if (victim != null && !victim.fireImmune() && FIRE_INFUSION_BURN > 0)
+			victim.setRemainingFireTicks(Math.max(victim.getRemainingFireTicks(), FIRE_INFUSION_BURN * 20));
+		slashFx(attacker, victim, FIRE_INFUSION_FX);
+		double base = ab != null && (ab.base > 0 || ab.per > 0) ? ab.base : FIRE_INFUSION_BASE;
+		double per = ab != null && (ab.base > 0 || ab.per > 0) ? ab.per : FIRE_INFUSION_PER_STR;
+		return Math.min(FIRE_INFUSION_MAX, base + Math.max(0, str) * per);
+	}
+
+	private static void slashFx(Player attacker, LivingEntity victim, String fx) {
+		if (fx == null || fx.isEmpty() || victim == null || attacker == null) return;
+		if (victim.level().isClientSide() || victim.getServer() == null) return;
+		double dx = victim.getX() - attacker.getX();
+		double dz = victim.getZ() - attacker.getZ();
+		double yaw = (dx * dx + dz * dz) > 1.0e-4 ? -Math.toDegrees(Math.atan2(dz, dx)) : 0;
+		victim.getServer().getCommands().performPrefixedCommand(
+				new net.minecraft.commands.CommandSourceStack(net.minecraft.commands.CommandSource.NULL,
+						victim.position(), victim.getRotationVector(),
+						victim.level() instanceof net.minecraft.server.level.ServerLevel sl ? sl : null, 4,
+						victim.getName().getString(), victim.getDisplayName(), victim.level().getServer(), victim),
+				String.format(java.util.Locale.ROOT,
+						"photon fx %s entity @s 0 %.2f 0 0 %.2f 0 1 1 1 0 false false none",
+						fx, victim.getBbHeight() * 0.55, yaw));
 	}
 
 	private static boolean isTalent(DamageSource src) {

@@ -18,7 +18,7 @@ public class DashEffectTicksProcedure {
 					(entity.getDeltaMovement().z())));
 		}
 		if (entity instanceof LivingEntity _livEnt5 && _livEnt5.hasEffect(OrdealModMobEffects.DOWN_DASH)) {
-			entity.setDeltaMovement(new Vec3((entity.getDeltaMovement().x()), (entity instanceof LivingEntity _livEnt && _livEnt.hasEffect(OrdealModMobEffects.DOWN_DASH) ? _livEnt.getEffect(OrdealModMobEffects.DOWN_DASH).getAmplifier() : 0),
+			entity.setDeltaMovement(new Vec3((entity.getDeltaMovement().x()), ((entity instanceof LivingEntity _livEnt && _livEnt.hasEffect(OrdealModMobEffects.DOWN_DASH) ? _livEnt.getEffect(OrdealModMobEffects.DOWN_DASH).getAmplifier() : 0) * (-1)),
 					(entity.getDeltaMovement().z())));
 			if (entity.onGround()) {
 				if (entity instanceof LivingEntity _entity)
@@ -30,7 +30,12 @@ public class DashEffectTicksProcedure {
 					(entity.getLookAngle().y * (entity instanceof LivingEntity _livEnt && _livEnt.hasEffect(OrdealModMobEffects.FORWARD_DASH) ? _livEnt.getEffect(OrdealModMobEffects.FORWARD_DASH).getAmplifier() : 0)),
 					(entity.getLookAngle().z * (entity instanceof LivingEntity _livEnt && _livEnt.hasEffect(OrdealModMobEffects.FORWARD_DASH) ? _livEnt.getEffect(OrdealModMobEffects.FORWARD_DASH).getAmplifier() : 0))));
 		}
-		if (entity instanceof LivingEntity _livEnt20 && _livEnt20.hasEffect(OrdealModMobEffects.FORWARD_DASH_NO_AIR_TIME)) {
+		if (entity instanceof LivingEntity _livEnt20 && _livEnt20.hasEffect(OrdealModMobEffects.BACK_DASH)) {
+			entity.setDeltaMovement(new Vec3((entity.getLookAngle().x * (entity instanceof LivingEntity _livEnt && _livEnt.hasEffect(OrdealModMobEffects.BACK_DASH) ? _livEnt.getEffect(OrdealModMobEffects.BACK_DASH).getAmplifier() : 0) * (-1)),
+					(entity.getLookAngle().y * (entity instanceof LivingEntity _livEnt && _livEnt.hasEffect(OrdealModMobEffects.BACK_DASH) ? _livEnt.getEffect(OrdealModMobEffects.BACK_DASH).getAmplifier() : 0)),
+					(entity.getLookAngle().z * (entity instanceof LivingEntity _livEnt && _livEnt.hasEffect(OrdealModMobEffects.BACK_DASH) ? _livEnt.getEffect(OrdealModMobEffects.BACK_DASH).getAmplifier() : 0) * (-1))));
+		}
+		if (entity instanceof LivingEntity _livEnt28 && _livEnt28.hasEffect(OrdealModMobEffects.FORWARD_DASH_NO_AIR_TIME)) {
 			entity.setDeltaMovement(new Vec3(
 					(entity.getLookAngle().x * (entity instanceof LivingEntity _livEnt && _livEnt.hasEffect(OrdealModMobEffects.FORWARD_DASH_NO_AIR_TIME) ? _livEnt.getEffect(OrdealModMobEffects.FORWARD_DASH_NO_AIR_TIME).getAmplifier() : 0)),
 					(entity.getDeltaMovement().y()),

@@ -1,0 +1,10 @@
+{
+  "id": "unstable_chi",
+  "name": "Unstable Chi",
+  "desc": "WIP",
+  "obtain": "WIP",
+  "accent": "FF6B6B",
+  "grant": {
+    "type": "never"
+  }
+}

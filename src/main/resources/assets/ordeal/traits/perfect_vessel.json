@@ -1,0 +1,12 @@
+{
+  "id": "perfect_vessel",
+  "name": "Perfect Vessel",
+  "desc": "Being born with the Thanatos talent gifts the user the perfect body and a vast amount of chi.",
+  "obtain": "Born holding the Thanatos talent.",
+  "accent": "9B6BFF",
+  "grant": {
+    "type": "talent",
+    "id": "thanatos",
+    "source": "birth"
+  }
+}

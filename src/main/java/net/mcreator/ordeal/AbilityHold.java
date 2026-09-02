@@ -10,27 +10,17 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
+import net.minecraft.commands.CommandSource;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.mcreator.ordeal.network.PlayPlayerAnimationMessage;
+import net.neoforged.neoforge.network.PacketDistributor;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Held abilities. An ability with a "hold" block in its talent JSON stops
- * firing the instant you press it and instead runs on the key being down:
- *
- *   charge  - climbs 5 levels, 0.5s each; fires on release at that level
- *   channel - re-fires every few ticks for as long as you hold it
- *   toggle  - press to start, press again (or run dry) to stop
- *
- * All three drain chi per second and stop at a cap, so nothing can be held
- * forever. Abilities with no hold block are untouched: ready() returns true
- * the tick you press, and power() returns 1.
- *
- * Two calls to use from a procedure's Java block:
- *
- *   AbilityHold.ready(entity)  - true on the exact tick the ability should go off
- *   AbilityHold.power(entity)  - multiply damage and knockback by this
- */
 @EventBusSubscriber(modid = "ordeal")
 public final class AbilityHold {
 
@@ -44,13 +34,14 @@ public final class AbilityHold {
 		int sinceLast;
 		boolean wasDown;
 		boolean toggled;
-		boolean fire;        // true for exactly one tick
-		boolean spent;       // a charge that already went off waits for the key to come up
-		boolean pressFired;  // fireOnPress already sent the opener this hold
+		boolean fire;
+		boolean spent;
+		boolean pressFired;
 		double power = 1;
-		int level;           // charge step reached, 0..levels
-		double chiDebt;      // fractional chi carried between ticks
-		double drained;      // what this hold has actually cost, for a tap refund
+		int level;
+		double chiDebt;
+		double drained;
+		boolean starved;
 	}
 
 	private static final Map<UUID, State> STATES = new HashMap<>();
@@ -59,15 +50,11 @@ public final class AbilityHold {
 		return STATES.computeIfAbsent(e.getUUID(), k -> new State());
 	}
 
-	/**
-	 * Runs the ability's own procedure when the hold says go, so the gate chain
-	 * you already wrote is what fires - cooldown, chi and all.
-	 *
-	 * phoenix_spear -> net.mcreator.ordeal.procedures.PhoenixSpear0Procedure
-	 */
 	public static String PROC_SUFFIX = "0Procedure";
 
 	private static void dispatch(Player p, String abilityId) {
+
+		net.mcreator.ordeal.core.OrdealTalentChi.prefund(p, abilityId);
 		OrdealTalents.Ability ab = OrdealTalents.abilityByName(abilityId);
 		String id = ab != null ? ab.id : abilityId;
 		if (id == null || id.isEmpty()) return;
@@ -87,121 +74,110 @@ public final class AbilityHold {
 		}
 	}
 
-	// ---- what a procedure asks -------------------------------------------
-
-	/**
-	 * The ability that should go off THIS TICK, or "" for none.
-	 *
-	 * Use this as the outer condition of the dispatcher instead of "which key
-	 * is pressed". A charge fires on RELEASE, when the key is already back up —
-	 * a dispatcher that keys off the button being down would never see it.
-	 */
 	public static String firing(Entity e) {
 		if (e == null) return "";
 		State s = STATES.get(e.getUUID());
 		return s != null && s.fire ? s.id : "";
 	}
 
-	/**
-	 * Drop-in replacement for GetAbilityPressed.
-	 *
-	 * Returns the ability under the key, EXCEPT for abilities AbilityHold runs
-	 * itself — those come back empty, so a dispatcher built on this can never
-	 * double-fire a held ability and needs to know nothing about which is which.
-	 * Add a hold block to any ability later and this keeps working untouched.
-	 */
 	public static String pressed(Entity e) {
 		if (e == null) return "";
 		String name = pressedAbility(e);
 		return isHold(name) ? "" : name;
 	}
 
-	/**
-	 * Boolean form, for a plain "if" block:
-	 *   net.mcreator.ordeal.AbilityHold.pressed(entity, "Phoenix Spear")
-	 *
-	 * True only on the tick that ability's key goes down, and never for an
-	 * ability AbilityHold runs itself - so the dispatcher is one if per
-	 * ability with nothing else to guard.
-	 */
 	public static boolean pressed(Entity e, String abilityName) {
 		if (e == null || abilityName == null || abilityName.isEmpty()) return false;
-		return abilityName.equalsIgnoreCase(pressed(e));
+		if (!abilityName.equalsIgnoreCase(pressed(e))) return false;
+
+		if (e instanceof Player pl)
+			net.mcreator.ordeal.core.OrdealTalentChi.prefund(pl, abilityName);
+		return true;
 	}
 
-	/**
-	 * True when this ability is driven by AbilityHold rather than by a key
-	 * press. A dispatcher should SKIP these - AbilityHold runs them itself, at
-	 * the right moment. Instant abilities return false and are untouched.
-	 */
 	public static boolean isHold(String abilityName) {
 		OrdealTalents.Ability ab = OrdealTalents.abilityByName(abilityName);
 		return ab != null && ab.hold != null;
 	}
 
-	/**
-	 * Is this ability chargeable? Straight out of the talent json - an ability
-	 * with a "hold" block is chargeable, one without it is not. Use this to set
-	 * your local "chargeable" flag instead of hand-writing it per procedure:
-	 *   net.mcreator.ordeal.AbilityHold.chargeable("Phoenix Spear")
-	 */
 	public static boolean chargeable(String abilityName) {
 		OrdealTalents.Ability ab = OrdealTalents.abilityByName(abilityName);
-		return ab != null && ab.hold != null && ab.hold.isCharge();
+		return ab != null && ab.hold != null && ab.hold.climbs();
 	}
 
-	/** Same, for whatever ability this entity is holding right now. */
 	public static boolean chargeable(Entity e) {
 		if (e == null) return false;
 		State s = STATES.get(e.getUUID());
 		return s != null && chargeable(s.id);
 	}
 
-	/** True on the single tick this entity's held ability should fire. */
 	public static boolean ready(Entity e) {
 		if (e == null) return false;
 		State s = STATES.get(e.getUUID());
 		return s != null && s.fire;
 	}
 
-	/** Charge multiplier for the shot that is firing now. 1.0 when not a charge. */
 	public static double power(Entity e) {
 		if (e == null) return 1;
 		State s = STATES.get(e.getUUID());
 		return s == null ? 1 : s.power;
 	}
 
-	/** Charge step reached, 0..levels. 0 for instant and channel abilities. */
 	public static int level(Entity e) {
 		if (e == null) return 0;
 		State s = STATES.get(e.getUUID());
 		return s == null ? 0 : s.level;
 	}
 
-	/** The step the key is CURRENTLY at while still held - for the HUD. */
 	public static int liveLevel(Entity e) {
 		if (e == null) return 0;
 		State s = STATES.get(e.getUUID());
 		if (s == null || s.id.isEmpty()) return 0;
 		OrdealTalents.Ability ab = OrdealTalents.abilityByName(s.id);
-		return ab == null || ab.hold == null ? 0 : ab.hold.levelAt(s.ticks);
+		return ab == null || ab.hold == null ? 0 : levelOf(e, s.id, ab.hold, s.ticks);
 	}
 
-	/** How long the key has been down, in ticks. */
+	/**
+	 * Tomas is the one hold whose charge time lives in a tunable
+	 * (tomas.charge_seconds, cut by Chi Control) instead of the talent json.
+	 * These two helpers are the only place that override exists.
+	 */
+	private static boolean isTomas(String name) {
+		if (name == null || name.isEmpty()) return false;
+		if (name.equalsIgnoreCase(Tomas.ABILITY_ID)) return true;
+		OrdealTalents.Ability ab = OrdealTalents.abilityByName(name);
+		return ab != null && Tomas.ABILITY_ID.equalsIgnoreCase(ab.id);
+	}
+
+	private static int maxTicksOf(Entity e, String id, OrdealTalents.Hold h) {
+		if (h == null) return 1;
+		if (h.isCharge() && isTomas(id))
+			return Math.max(1, (int) Math.round(Tomas.chargeSeconds(e) * 20));
+		return h.maxTicks();
+	}
+
+	private static int levelOf(Entity e, String id, OrdealTalents.Hold h, int ticks) {
+		if (h == null) return 0;
+		if (h.isCharge() && isTomas(id)) {
+			int per = Math.max(1, maxTicksOf(e, id, h) / Math.max(1, h.levels));
+			return Math.min(h.levels, ticks / per);
+		}
+		return h.levelAt(ticks);
+	}
+
 	public static int heldTicks(Entity e) {
 		if (e == null) return 0;
 		State s = STATES.get(e.getUUID());
 		return s == null ? 0 : s.ticks;
 	}
 
-	/** 0..1 across the hold window, for a charge bar. */
 	public static double chargeFraction(Entity e) {
 		if (e == null) return 0;
 		State s = STATES.get(e.getUUID());
 		if (s == null || s.id.isEmpty()) return 0;
 		OrdealTalents.Ability ab = OrdealTalents.abilityByName(s.id);
 		if (ab == null || ab.hold == null) return 0;
-		int max = ab.hold.maxTicks();
+		int max = maxTicksOf(e, s.id, ab.hold);
 		return max <= 0 ? 0 : Math.max(0, Math.min(1, s.ticks / (double) max));
 	}
 
@@ -211,7 +187,12 @@ public final class AbilityHold {
 		return s == null ? "" : s.id;
 	}
 
-	// ---- the loop ---------------------------------------------------------
+	/** True while the current hold is dead weight - pressed on cooldown, or already fired. */
+	public static boolean spent(Entity e) {
+		if (e == null) return false;
+		State s = STATES.get(e.getUUID());
+		return s != null && s.spent;
+	}
 
 	@SubscribeEvent
 	public static void onTick(PlayerTickEvent.Post event) {
@@ -223,16 +204,19 @@ public final class AbilityHold {
 
 		String pressed = pressedAbility(p);
 		boolean down = !pressed.isEmpty();
-		// Resolve from what is held now, or from what WAS held. A charge fires on
-		// RELEASE - the key is already up by then, so reading the live key state
-		// would hand back null and the shot would silently never go off.
+
 		String id = down ? pressed : s.id;
 		OrdealTalents.Ability ab = OrdealTalents.abilityByName(id);
 		OrdealTalents.Hold h = ab == null ? null : ab.hold;
 
-		// an ability with no hold block keeps the old behaviour exactly
 		if (down && h == null) {
-			if (!s.wasDown) { s.fire = true; s.power = 1; s.level = 0; s.id = pressed; publish(p, 1); }
+			if (!s.wasDown) {
+				s.fire = true; s.power = 1; s.level = 0; s.id = pressed;
+				publish(p, 1);
+				boolean cd = onCooldown(p, pressed);
+				dispatch(p, pressed);
+				if (ab != null && ab.stunTicks > 0 && !cd) stun(p, ab.stunTicks);
+			}
 			s.wasDown = true;
 			s.ticks = 0;
 			return;
@@ -242,21 +226,21 @@ public final class AbilityHold {
 
 		if (down) {
 			if (!s.wasDown) {
-				// a held ability on cooldown must not wind up. Without this the
-				// charge drains chi the whole time it is held and then fires
-				// nothing, because the procedure's own gate turns it away
+
 				if (onCooldown(p, pressed)) {
 					s.wasDown = true;
-					s.spent = true;          // nothing charges until the key comes up
+					s.spent = true;
 					s.id = pressed;
 					s.ticks = 0;
-					dispatch(p, pressed);    // let the procedure say how long is left
+					dispatch(p, pressed);
 					return;
 				}
 				s.id = pressed; s.ticks = 0; s.sinceLast = 0;
 				s.chiDebt = 0; s.drained = 0; s.spent = false; s.pressFired = false;
-				// press-to-fire: the ability goes off the instant you touch the
-				// key, and any charge becomes a bonus hit when you let go
+				s.starved = false;
+				startAnims(p, h);
+				stun(p, h.stunTicks);
+
 				if (h.isCharge() && h.fireOnPress) {
 					s.level = 0;
 					s.power = h.powerAtLevel(0);
@@ -267,30 +251,34 @@ public final class AbilityHold {
 				}
 			}
 			s.wasDown = true;
-			// a charge that already went off waits for the key to come up
+
 			if (s.spent) return;
 
-			if (onCooldown(p, s.id)) { release(p, s, h, true); return; }
+			if (!h.pulses() && onCooldown(p, s.id)) { release(p, s, h, true); return; }
 
-			int max = h.maxTicks();
+			int max = maxTicksOf(p, s.id, h);
 			boolean capped = s.ticks >= max;
-			if (!capped) s.ticks++;
 
-			// a full charge SITS there. It stops climbing and stops costing chi,
-			// and it does not go off until the key comes up - holding past the
-			// cap is free, and nothing fires out from under you
+			if (!s.starved && !drain(p, h, s)) s.starved = true;
+			if (s.starved) {
+				if (h.pulses()) release(p, s, h, false);
+				return;
+			}
+
+			if (h.stunWhileHold) stun(p, STUN_REFRESH);
 			if (capped && h.isCharge()) return;
 
-			if (!drain(p, h, s)) { release(p, s, h, true); return; }
+			if (!capped) s.ticks++;
 
-			if (h.isChannel()) {
+			if (h.pulses()) {
 				s.sinceLast++;
 				if (s.sinceLast >= h.tickEvery) {
 					s.sinceLast = 0;
-					s.power = 1;
-					s.level = 0;
+
+					s.level = h.isRamp() ? h.levelAt(s.ticks) : 0;
+					s.power = h.isRamp() ? h.powerAtLevel(s.level) : 1;
 					s.fire = true;
-					publish(p, 1);
+					publish(p, s.power);
 					dispatch(p, s.id);
 				}
 				if (capped) release(p, s, h, false);
@@ -312,15 +300,18 @@ public final class AbilityHold {
 			s.chiDebt = 0;
 			s.drained = 0;
 			s.power = 1;
-			if (s.toggled) s.fire = true;
+			if (s.toggled) { s.fire = true; startAnims(p, h); stun(p, h.stunTicks); }
+			else stopAnims(p, h);
 		}
 		s.wasDown = down;
 		if (!s.toggled) return;
 
 		s.ticks++;
+		if (h.stunWhileHold) stun(p, STUN_REFRESH);
 		if (!drain(p, h, s) || (h.maxTicks() > 0 && s.ticks >= h.maxTicks())) {
 			s.toggled = false;
 			s.ticks = 0;
+			stopAnims(p, h);
 			return;
 		}
 		s.sinceLast++;
@@ -332,12 +323,11 @@ public final class AbilityHold {
 		}
 	}
 
-	/** Fire at whatever level was reached, or drop it if it never reached level 1. */
 	private static void release(Player p, State s, OrdealTalents.Hold h, boolean dry) {
+		stopAnims(p, h);
 		if (h != null && h.isCharge()) {
-			// with fireOnPress the opener already went out, so only a real
-			// charge earns the second hit - a tap must not fire twice
-			boolean earned = !s.pressFired || h.levelAt(s.ticks) >= 1;
+
+			boolean earned = !s.pressFired || levelOf(p, s.id, h, s.ticks) >= 1;
 			if (!dry && earned) fireCharge(p, s, h);
 			else refund(p, s);
 		}
@@ -347,12 +337,12 @@ public final class AbilityHold {
 		s.chiDebt = 0;
 		s.drained = 0;
 		s.spent = false;
+		s.starved = false;
 		s.wasDown = false;
 	}
 
-	/** Level reached, power, and the chargePower variable your procedures read. */
 	private static void fireCharge(Player p, State s, OrdealTalents.Hold h) {
-		s.level = h.levelAt(s.ticks);
+		s.level = levelOf(p, s.id, h, s.ticks);
 		s.power = h.powerAtLevel(s.level);
 		s.fire = true;
 		s.spent = true;
@@ -363,34 +353,112 @@ public final class AbilityHold {
 		s.drained = 0;
 	}
 
-	/** Mirror the multiplier into the chargePower player variable so blocks can read it. */
+	private static void startAnims(Player p, OrdealTalents.Hold h) {
+		if (h == null || p.level().isClientSide()) return;
+		if (!h.anim3p.isEmpty()) playerAnim(p, h.anim3p);
+		if (!h.anim1p.isEmpty()) runAs(p, h.anim1p);
+	}
+
+	private static void stopAnims(Player p, OrdealTalents.Hold h) {
+		if (h == null || p.level().isClientSide()) return;
+		if (!h.anim3p.isEmpty()) playerAnim(p, "");
+		if (!h.anim1p.isEmpty()) runAs(p, "ordealanimations stop");
+	}
+
+	private static void playerAnim(Player p, String name) {
+		if (!(p instanceof ServerPlayer sp) || !(p.level() instanceof ServerLevel sl)) return;
+
+		String id = name.isEmpty() || name.indexOf(':') >= 0 ? name : "ordeal:" + name;
+		PacketDistributor.sendToPlayersInDimension(sl,
+				new PlayPlayerAnimationMessage(sp.getId(), id, true, false));
+	}
+
+	private static void runAs(Player p, String command) {
+		if (p.getServer() == null || command == null || command.isEmpty()) return;
+		try {
+			p.getServer().getCommands().performPrefixedCommand(
+					new CommandSourceStack(CommandSource.NULL, p.position(), p.getRotationVector(),
+							p.level() instanceof ServerLevel sl ? sl : null, 4,
+							p.getName().getString(), p.getDisplayName(), p.getServer(), p),
+					command);
+		} catch (Throwable ignored) {
+
+		}
+	}
+
+	private static net.minecraft.world.effect.MobEffect STUN_FX;
+	private static boolean STUN_LOOKED = false;
+
+	private static net.minecraft.world.effect.MobEffect stunEffect() {
+		if (STUN_FX != null) return STUN_FX;
+		if (STUN_LOOKED) return null;
+		STUN_LOOKED = true;
+		for (var en : net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.entrySet()) {
+			if (!en.getKey().location().getNamespace().equals("ordeal")) continue;
+			String path = en.getKey().location().getPath().replace("_", "").toLowerCase(java.util.Locale.ROOT);
+			if (path.startsWith("movementstun")) {
+				STUN_FX = en.getValue();
+				break;
+			}
+		}
+		if (STUN_FX == null)
+			System.err.println("[Ordeal] a hold asked for the movement stun but no ordeal:movement_stun* effect is registered");
+		return STUN_FX;
+	}
+
+	private static void stun(Player p, int ticks) {
+		if (ticks <= 0 || p.level().isClientSide()) return;
+		var fx = stunEffect();
+		if (fx == null) return;
+		p.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+				net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.wrapAsHolder(fx),
+				ticks, 0, false, false));
+	}
+
+	public static int STUN_REFRESH = OrdealTuning.i("combat.hold_stun_refresh", 3);
+
 	private static void publish(Player p, double power) {
 		OrdealModVariables.PlayerVariables v = p.getData(OrdealModVariables.PLAYER_VARIABLES);
 		v.chargePower = power;
 		v.markSyncDirty();
 	}
 
-	/** Take the per-tick cost, cut by Chi Control. False when the pool is empty. */
+	private static boolean fuelled(Player p, State s, OrdealModVariables.PlayerVariables v) {
+		if (v.chi > 0) return true;
+		return net.mcreator.ordeal.core.OrdealTalentChi.canDraw(p, s.id, 1);
+	}
+
 	private static boolean drain(Player p, OrdealTalents.Hold h, State s) {
 		OrdealModVariables.PlayerVariables v0 = p.getData(OrdealModVariables.PLAYER_VARIABLES);
 		double perTick = h.drainPerTick(v0.statChiControl);
 		if (perTick <= 0) return true;
-		// a tap is not a charge - the first few ticks are free, so pressing and
-		// letting go costs exactly what the ability costs and nothing more
-		if (s.ticks <= h.graceTicks) return v0.chi > 0;
+
+		if (s.ticks <= h.graceTicks) return fuelled(p, s, v0);
 		OrdealModVariables.PlayerVariables v = v0;
 		s.chiDebt += perTick;
-		if (s.chiDebt < 1) return v.chi > 0;
+
+		if (s.chiDebt < 1) return fuelled(p, s, v);
 		double take = Math.floor(s.chiDebt);
 		s.chiDebt -= take;
-		if (v.chi < take) { v.chi = 0; v.markSyncDirty(); return false; }
+		if (v.chi < take) {
+
+			double shortfall = take - v.chi;
+			if (net.mcreator.ordeal.core.OrdealTalentChi.canDraw(p, s.id, shortfall)) {
+				net.mcreator.ordeal.core.OrdealTalentChi.draw(p, s.id, shortfall);
+				s.drained += take;
+				v.chi = 0;
+				v.markSyncDirty();
+				return true;
+			}
+
+			return false;
+		}
 		v.chi -= take;
 		s.drained += take;
 		v.markSyncDirty();
 		return true;
 	}
 
-	/** A tap that never became a charge gives back everything it drained. */
 	private static void refund(Player p, State s) {
 		if (s.drained <= 0) return;
 		OrdealModVariables.PlayerVariables v = p.getData(OrdealModVariables.PLAYER_VARIABLES);
@@ -399,7 +467,6 @@ public final class AbilityHold {
 		v.markSyncDirty();
 	}
 
-	/** Which loadout slot is being held, as an ability name. Empty when none. */
 	private static String pressedAbility(Entity e) {
 		OrdealModVariables.PlayerVariables v = e.getData(OrdealModVariables.PLAYER_VARIABLES);
 		int off = v.ability_Row == 2 ? 5 : 0;
@@ -411,19 +478,40 @@ public final class AbilityHold {
 		return "";
 	}
 
-	/**
-	 * Ticks left on this ability's cooldown, or 0 when it is ready.
-	 *
-	 * The cooldown lives on the CD_1..CD_10 effect matching the loadout slot,
-	 * the same place your procedures read it from. Resolved by name so this
-	 * keeps working whatever the effect elements end up called.
-	 */
+	private static int slotOf(OrdealModVariables.PlayerVariables v, String abilityName) {
+		for (int i = 1; i <= 10; i++)
+			if (abilityName.equalsIgnoreCase(slot(v, i))) return i;
+		return 0;
+	}
+
+	public static void applyCooldown(Entity e, String abilityName, int ticks) {
+		if (!(e instanceof Player p) || ticks <= 0) return;
+		if (p.level().isClientSide()) return;
+		if (abilityName == null || abilityName.isEmpty()) return;
+		OrdealModVariables.PlayerVariables v = p.getData(OrdealModVariables.PLAYER_VARIABLES);
+		int slot = slotOf(v, abilityName);
+		if (slot == 0) return;
+		var fx = cdEffect(slot);
+		if (fx == null) return;
+		p.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+				net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.wrapAsHolder(fx),
+				ticks, 0, false, false));
+	}
+
+	public static boolean once(Entity e, String key, int ticks) {
+		if (!(e instanceof Player p) || p.level().isClientSide()) return false;
+		if (key == null || key.isEmpty()) return false;
+		String k = "ordeal_once_" + key;
+		long now = p.level().getGameTime();
+		if (p.getPersistentData().getLong(k) > now) return false;
+		p.getPersistentData().putLong(k, now + Math.max(1, ticks));
+		return true;
+	}
+
 	public static int cooldownLeft(Entity e, String abilityName) {
 		if (!(e instanceof Player p) || abilityName == null || abilityName.isEmpty()) return 0;
 		OrdealModVariables.PlayerVariables v = p.getData(OrdealModVariables.PLAYER_VARIABLES);
-		int slot = 0;
-		for (int i = 1; i <= 10; i++)
-			if (abilityName.equalsIgnoreCase(slot(v, i))) { slot = i; break; }
+		int slot = slotOf(v, abilityName);
 		if (slot == 0) return 0;
 		var fx = cdEffect(slot);
 		if (fx == null) return 0;
@@ -432,8 +520,10 @@ public final class AbilityHold {
 		return inst == null ? 0 : inst.getDuration();
 	}
 
+	public static int CD_READY_AT = net.mcreator.ordeal.OrdealTuning.i("combat.cd_ready_ticks", 20);
+
 	public static boolean onCooldown(Entity e, String abilityName) {
-		return cooldownLeft(e, abilityName) > 0;
+		return cooldownLeft(e, abilityName) >= CD_READY_AT;
 	}
 
 	private static final Map<Integer, net.minecraft.world.effect.MobEffect> CD_CACHE = new HashMap<>();
@@ -448,8 +538,7 @@ public final class AbilityHold {
 				break;
 			}
 		}
-		// only cache a hit - the registry may not be filled the first time this
-		// is asked, and caching a null there would disable the check for good
+
 		if (found != null) CD_CACHE.put(slot, found);
 		return found;
 	}

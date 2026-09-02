@@ -39,6 +39,14 @@ public final class OrdealAnimStore {
 
 	private static final String CONFIG_DIR = "ordealanim";
 	private static final String ASSET_PATH = "/assets/ordeal/anim/";
+
+	/**
+	 * Subfolders of assets/ordeal/anim/ that shipped clips may live in. Add a
+	 * folder name here and clips inside it load by their plain name.
+	 * Dev-workspace loading walks the tree and ignores this list; it only
+	 * matters once the clips are baked into a jar, which cannot be listed.
+	 */
+	public static String[] ASSET_SUBDIRS = { "flight", "combat", "state", "misc" };
 	private static final Gson GSON = new Gson();
 
 	private OrdealAnimStore() {}
@@ -94,9 +102,10 @@ public final class OrdealAnimStore {
 
 		// 2) the source asset, which is newer than whatever the jar was built with
 		Path assets = assetSourceDir();
-		if (assets != null && Files.isRegularFile(assets.resolve(safe + ".json"))) {
+		Path found = findAsset(assets, safe);
+		if (found != null) {
 			try {
-				return OrdealAnimData.fromJson(Files.readString(assets.resolve(safe + ".json"), StandardCharsets.UTF_8));
+				return OrdealAnimData.fromJson(Files.readString(found, StandardCharsets.UTF_8));
 			} catch (Exception e) {
 				System.err.println("[OrdealAnim] Failed reading asset clip '" + safe + "': " + e.getMessage());
 			}
@@ -109,7 +118,52 @@ public final class OrdealAnimStore {
 		} catch (Exception e) {
 			System.err.println("[OrdealAnim] Failed reading baked clip '" + safe + "': " + e.getMessage());
 		}
+		// 4) baked assets, in a subfolder. A jar cannot be listed at runtime, so
+		// the folders to probe are named here rather than discovered.
+		for (String sub : ASSET_SUBDIRS) {
+			try (InputStream in = OrdealAnimStore.class.getResourceAsStream(ASSET_PATH + sub + "/" + safe + ".json")) {
+				if (in != null)
+					return OrdealAnimData.fromJson(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+			} catch (Exception e) {
+				System.err.println("[OrdealAnim] Failed reading baked clip '" + sub + "/" + safe + "': " + e.getMessage());
+			}
+		}
 		return null;
+	}
+
+	/**
+	 * True when this clip is a FIRST-PERSON clip - it has keys on the fp_ tracks
+	 * and nothing on the body. The browser groups on this, so an fp clip and the
+	 * third-person clip of the same move do not sit in one undifferentiated list.
+	 *
+	 * Cached, because the browser asks once per name per frame; the cache is
+	 * dropped whenever a clip is written or removed.
+	 */
+	public static boolean firstPerson(String name) {
+		String safe = sanitize(name);
+		if (safe == null) return false;
+		Boolean known = FP_CACHE.get(safe);
+		if (known != null) return known;
+		OrdealAnimData d = load(safe);
+		boolean fp = false;
+		if (d != null) {
+			boolean anyFp = false, anyBody = false;
+			for (java.util.Map.Entry<String, List<OrdealAnimData.Key>> e : d.bones.entrySet()) {
+				if (e.getValue().isEmpty()) continue;
+				if (OrdealAnimData.isFp(e.getKey())) anyFp = true;
+				else anyBody = true;
+			}
+			fp = anyFp && !anyBody;
+		}
+		FP_CACHE.put(safe, fp);
+		return fp;
+	}
+
+	private static final java.util.Map<String, Boolean> FP_CACHE = new java.util.HashMap<>();
+
+	/** Drop the first-person classification cache. */
+	public static void forgetKinds() {
+		FP_CACHE.clear();
 	}
 
 	public static boolean exists(String name) {
@@ -121,10 +175,16 @@ public final class OrdealAnimStore {
 		if (inMod(safe))
 			return true;
 		try (InputStream in = OrdealAnimStore.class.getResourceAsStream(ASSET_PATH + safe + ".json")) {
-			return in != null;
+			if (in != null) return true;
 		} catch (IOException e) {
-			return false;
+			// fall through to the subfolder probe
 		}
+		for (String sub : ASSET_SUBDIRS) {
+			try (InputStream in = OrdealAnimStore.class.getResourceAsStream(ASSET_PATH + sub + "/" + safe + ".json")) {
+				if (in != null) return true;
+			} catch (IOException ignored) {}
+		}
+		return false;
 	}
 
 	// ------------------------------------------------------------------
@@ -150,6 +210,7 @@ public final class OrdealAnimStore {
 		// clip and then saving one with the same name left it hidden and the
 		// browser showed nothing
 		HIDDEN.remove(safe);
+		FP_CACHE.remove(safe);
 		String json = data.toJson();
 		boolean ok = false;
 		try {
@@ -161,7 +222,15 @@ public final class OrdealAnimStore {
 		Path assets = assetSourceDir();
 		if (assets != null) {
 			try {
-				Files.writeString(assets.resolve(safe + ".json"), json, StandardCharsets.UTF_8);
+				// SAVE BACK WHERE IT ALREADY LIVES. If this clip is already on
+				// disk in a subfolder - anim/flight/, say - write to that exact
+				// file instead of dropping a second copy at the top level. Before
+				// this, every save in the editor put the clip back in anim/ and
+				// you had to move it into flight/ again by hand, and the stale
+				// top-level copy would then shadow the one you moved.
+				Path existing = findAsset(assets, safe);
+				Path target = existing != null ? existing : assets.resolve(safe + ".json");
+				Files.writeString(target, json, StandardCharsets.UTF_8);
 				writeIndex(assets);
 				ok = true;
 			} catch (IOException e) {
@@ -174,14 +243,40 @@ public final class OrdealAnimStore {
 	/** True when the clip landed in the mod's assets and will ship with a build. */
 	public static boolean inMod(String name) {
 		String safe = sanitize(name);
-		Path assets = assetSourceDir();
-		return safe != null && assets != null && Files.isRegularFile(assets.resolve(safe + ".json"));
+		return safe != null && findAsset(assetSourceDir(), safe) != null;
+	}
+
+	/**
+	 * Find <safe>.json under the asset folder, SUBFOLDERS INCLUDED.
+	 *
+	 * Clip names are flat - sanitize() strips slashes, so "flight/omni_man_idle"
+	 * can never be a name. But organising the files into folders is the obvious
+	 * thing to do, and before this the store only ever looked at the top level,
+	 * so anything filed into anim/flight/ simply did not exist as far as
+	 * playback was concerned. The name stays flat; only the lookup got deeper.
+	 *
+	 * Top level wins, so a clip sitting directly in anim/ still shadows a
+	 * same-named one in a subfolder. Depth is capped and the walk is cheap;
+	 * load() is called once per clip and OrdealAnimPlayback caches the result.
+	 */
+	private static Path findAsset(Path assets, String safe) {
+		if (assets == null || safe == null) return null;
+		Path flat = assets.resolve(safe + ".json");
+		if (Files.isRegularFile(flat)) return flat;
+		String want = safe + ".json";
+		try (Stream<Path> walk = Files.walk(assets, 4)) {
+			return walk.filter(Files::isRegularFile)
+					.filter(f -> f.getFileName().toString().equalsIgnoreCase(want))
+					.findFirst().orElse(null);
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	/** Jar contents can't be listed at runtime, so the names are baked beside them. */
 	private static void writeIndex(Path assets) throws IOException {
 		JsonArray arr = new JsonArray();
-		try (Stream<Path> s = Files.list(assets)) {
+		try (Stream<Path> s = Files.walk(assets, 4)) {
 			s.map(p -> p.getFileName().toString())
 					.filter(n -> n.endsWith(".json") && !n.startsWith("_"))
 					.sorted()
@@ -196,6 +291,7 @@ public final class OrdealAnimStore {
 		if (safe == null)
 			return false;
 		HIDDEN.add(safe);
+		FP_CACHE.remove(safe);
 		boolean gone = false;
 		try {
 			gone = Files.deleteIfExists(configDir().resolve(safe + ".json"));
@@ -270,7 +366,7 @@ public final class OrdealAnimStore {
 
 		Path assets = assetSourceDir();
 		if (assets != null) {
-			try (Stream<Path> s = Files.list(assets)) {
+			try (Stream<Path> s = Files.walk(assets, 4)) {
 				s.map(p -> p.getFileName().toString())
 						.filter(n -> n.endsWith(".json") && !n.startsWith("_"))
 						.forEach(n -> names.add(n.substring(0, n.length() - 5)));

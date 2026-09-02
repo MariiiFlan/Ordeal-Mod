@@ -1300,7 +1300,8 @@
         "files": [
           "src/main/java/net/mcreator/ordeal/OrdealImpactWords.java"
         ]
-      }
+      },
+      "path": "~/Combat"
     },
     {
       "name": "OrdealImpactPayload",
@@ -1311,6 +1312,1753 @@
       "metadata": {
         "files": [
           "src/main/java/net/mcreator/ordeal/OrdealImpactPayload.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "OrdealTalentChi",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_talent_chi",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealTalentChi.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "OrdealChiRefund",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_chi_refund",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealChiRefund.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "OrdealTraits",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_traits",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealTraits.java"
+        ]
+      }
+    },
+    {
+      "name": "ProjectileFly",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "projectile_fly",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "immediatesourceentity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/ProjectileFlyProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Phoenix Fire"
+    },
+    {
+      "name": "PhoenixFlamesWhileFly",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "phoenix_flames_while_fly",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "immediatesourceentity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/PhoenixFlamesWhileFlyProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Phoenix Fire"
+    },
+    {
+      "name": "PhoenixFlameProjectile",
+      "type": "projectile",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "phoenix_flame_projectile",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/entity/PhoenixFlameProjectileEntity.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Phoenix Fire"
+    },
+    {
+      "name": "PhoenixFlames0",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "phoenix_flames_0",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/PhoenixFlames0Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Phoenix Fire"
+    },
+    {
+      "name": "PhoenixFlames1",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "phoenix_flames_1",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/PhoenixFlames1Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Phoenix Fire"
+    },
+    {
+      "name": "OrdealProjectile",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_projectile",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealProjectile.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "MovementStunned",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "movement_stunned",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/MovementStunnedMobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "StunnedStart",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "stunned_start",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/StunnedStartProcedure.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "StunnedExpires",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "stunned_expires",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/StunnedExpiresProcedure.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "OrdealImpactFx",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_impact_fx",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealImpactFx.java"
+        ]
+      },
+      "path": "~/Combat"
+    },
+    {
+      "name": "DescendingMeteor0",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "descending_meteor_0",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/DescendingMeteor0Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Decending Meteor"
+    },
+    {
+      "name": "DescendingMeteor1",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "descending_meteor_1",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/DescendingMeteor1Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Decending Meteor"
+    },
+    {
+      "name": "DescendingMeteorOnTick",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "descending_meteor_on_tick",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/DescendingMeteorOnTickProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Decending Meteor"
+    },
+    {
+      "name": "DescendingMeteor",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "descending_meteor",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/DescendingMeteorMobEffect.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Decending Meteor"
+    },
+    {
+      "name": "AbilityKeyReleased",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ability_key_released",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/AbilityKeyReleasedProcedure.java"
+        ]
+      }
+    },
+    {
+      "name": "TrochosArmatonForward1",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "trochos_armaton_forward_1",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/TrochosArmatonForward1Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Trochos Armaton/Forward"
+    },
+    {
+      "name": "TrochosArmatonForward",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "trochos_armaton_forward",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/TrochosArmatonForwardMobEffect.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Trochos Armaton/Forward"
+    },
+    {
+      "name": "TrochosArmatonForwardOnTick",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "trochos_armaton_forward_on_tick",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/TrochosArmatonForwardOnTickProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Trochos Armaton/Forward"
+    },
+    {
+      "name": "BackDash",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "back_dash",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/BackDashMobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "TrochosArmaton0",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "trochos_armaton_0",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/TrochosArmaton0Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Trochos Armaton"
+    },
+    {
+      "name": "TrochosArmatonBack",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "trochos_armaton_back",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/TrochosArmatonBackMobEffect.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Trochos Armaton/Backward"
+    },
+    {
+      "name": "TrochosArmatonBackOnTick",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "trochos_armaton_back_on_tick",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/TrochosArmatonBackOnTickProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Trochos Armaton/Backward"
+    },
+    {
+      "name": "TrochosArmatonBack1",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "trochos_armaton_back_1",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/TrochosArmatonBack1Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Trochos Armaton/Backward"
+    },
+    {
+      "name": "Akonito0",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "akonito_0",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/Akonito0Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Akonito"
+    },
+    {
+      "name": "Akonito",
+      "type": "tool",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "akontio",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/ordeal/models/item/akontio.json",
+          "src/main/java/net/mcreator/ordeal/item/AkonitoItem.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Akonito"
+    },
+    {
+      "name": "AkonitoToolInInventoryTick",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "akonito_tool_in_inventory_tick",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/AkonitoToolInInventoryTickProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Akonito"
+    },
+    {
+      "name": "Akonito1",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "akonito_1",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/Akonito1Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Akonito"
+    },
+    {
+      "name": "AkonitoProjectile",
+      "type": "projectile",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "akonito_projectile",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/entity/AkonitoProjectileEntity.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Akonito"
+    },
+    {
+      "name": "AkonitoWhileFly",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "akonito_while_fly",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "immediatesourceentity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/AkonitoWhileFlyProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Akonito"
+    },
+    {
+      "name": "Akonito3",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "akonito_3",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/Akonito3Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Akonito"
+    },
+    {
+      "name": "Akonito2",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "akonito_2",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/Akonito2Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Akonito"
+    },
+    {
+      "name": "IliosProjectileHitBlock",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ilios_projectile_hit_block",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/IliosProjectileHitBlockProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Phoenix Fire"
+    },
+    {
+      "name": "IliosProjectileHitsEnt",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ilios_projectile_hits_ent",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/IliosProjectileHitsEntProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Phoenix Fire"
+    },
+    {
+      "name": "NegletFallDmg",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "neglet_fall_dmg",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/NegletFallDmgMobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "NegletFallDmgOnEffectActiveTick",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "neglet_fall_dmg_on_effect_active_tick",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/NegletFallDmgOnEffectActiveTickProcedure.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "Claymore0",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "claymore_0",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/Claymore0Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Claymore"
+    },
+    {
+      "name": "IliosClaymore",
+      "type": "tool",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ilios_claymore",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/item/IliosClaymoreItem.java",
+          "src/main/resources/assets/ordeal/models/item/ilios_claymore.json"
+        ]
+      },
+      "path": "~/Talents/Ilios/Claymore"
+    },
+    {
+      "name": "IliosClaymoreOnTick",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ilios_claymore_on_tick",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/IliosClaymoreOnTickProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Claymore"
+    },
+    {
+      "name": "Claymore1",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "claymore_1",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/Claymore1Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Claymore"
+    },
+    {
+      "name": "BreathOfThePhoenix0",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "breath_of_the_phoenix_0",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/BreathOfThePhoenix0Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Fire Breath"
+    },
+    {
+      "name": "BreathofPhoenixProjectile",
+      "type": "projectile",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "breathof_phoenix_projectile",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/entity/BreathofPhoenixProjectileEntity.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Fire Breath"
+    },
+    {
+      "name": "BreathofPhoenixWhileFly",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "breathof_phoenix_while_fly",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "immediatesourceentity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/BreathofPhoenixWhileFlyProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Fire Breath"
+    },
+    {
+      "name": "BreathofPhoenix",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "breathof_phoenix",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/BreathofPhoenixMobEffect.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Fire Breath"
+    },
+    {
+      "name": "AnimFx",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "anim_fx",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/AnimFx.java"
+        ]
+      },
+      "path": "~/VFX"
+    },
+    {
+      "name": "BreathofPhoenixOnTick",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "breathof_phoenix_on_tick",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/BreathofPhoenixOnTickProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Fire Breath"
+    },
+    {
+      "name": "BreathofPhoenixProjectileHit",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "breathof_phoenix_projectile_hit",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "immediatesourceentity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/BreathofPhoenixProjectileHitProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Fire Breath"
+    },
+    {
+      "name": "OrdealNoSelfHit",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_no_self_hit",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealNoSelfHit.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "CameraLockPotion",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "camera_lock_potion",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/potion/CameraLockPotionMobEffect.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "CameraLockPotionEffects",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "camera_lock_potion_effects",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/CameraLockPotionEffects.java"
+        ]
+      },
+      "path": "~/Potions"
+    },
+    {
+      "name": "FireInfusion0",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "fire_infusion_0",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/FireInfusion0Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Fire Infusion PASSIVE"
+    },
+    {
+      "name": "Passives",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "passives",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/Passives.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "DecimationClosing0",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "decimation_closing_0",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/DecimationClosing0Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Decimation Closing"
+    },
+    {
+      "name": "DecimationClosing",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "decimation_closing",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/DecimationClosing.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "FruitOfPureChiPlayerFinishesUsing",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "fruit_of_pure_chi_player_finishes_using",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/FruitOfPureChiPlayerFinishesUsingProcedure.java"
+        ]
+      }
+    },
+    {
+      "name": "FruitOfPureChi",
+      "type": "item",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "fruit_of_pure_chi",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/item/FruitOfPureChiItem.java",
+          "src/main/resources/assets/ordeal/models/item/fruit_of_pure_chi.json"
+        ]
+      }
+    },
+    {
+      "name": "ChiFruit",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "chi_fruit",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/ChiFruit.java"
+        ]
+      }
+    },
+    {
+      "name": "GravityPull",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "gravity_pull",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/GravityPull.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "Invincible",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "invincible",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/Invincible.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "Enhancements",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "enhancements",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/Enhancements.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "SemiImmortality",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "semi_immortality",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/SemiImmortality.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "Overdrive",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "overdrive",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/Overdrive.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "Synchronisation",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "synchronisation",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/Synchronisation.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "Sentinel",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "sentinel",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/Sentinel.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "StatusLine",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "status_line",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/StatusLine.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "Fx",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "fx",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/Fx.java"
+        ]
+      },
+      "path": "~/VFX"
+    },
+    {
+      "name": "EnhancementScreen",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "enhancement_screen",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/EnhancementScreen.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "EnhancementPrompt",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "enhancement_prompt",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/EnhancementPrompt.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "EnhancementPayload",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "enhancement_payload",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/EnhancementPayload.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "SemiImmortalityPassive",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "semi_immortality_passive",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/SemiImmortalityPassiveProcedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Decimation Closing"
+    },
+    {
+      "name": "Tomas0",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "tomas_0",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/Tomas0Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios/Fire Breath"
+    },
+    {
+      "name": "Tomas",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "tomas",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/Tomas.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "SolarCore",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "solar_core",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/SolarCore.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "SolarCorePayload",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "solar_core_payload",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/SolarCorePayload.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "Flight",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "flight",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/Flight.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "StageLadder",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "stage_ladder",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/StageLadder.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "TalentState",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "talent_state",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/TalentState.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "IliosState0",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ilios_state_0",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/IliosState0Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios"
+    },
+    {
+      "name": "IliosFlight0",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ilios_flight_0",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/mcreator/ordeal/procedures/IliosFlight0Procedure.java"
+        ]
+      },
+      "path": "~/Talents/Ilios"
+    },
+    {
+      "name": "IliosStatePayload",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ilios_state_payload",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/IliosStatePayload.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "IliosStatePrompt",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ilios_state_prompt",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/IliosStatePrompt.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "IliosStateScreen",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ilios_state_screen",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/IliosStateScreen.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "OrdealDebugOverlay",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_debug_overlay",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealDebugOverlay.java"
+        ]
+      },
+      "path": "~/Debug"
+    },
+    {
+      "name": "OrdealDebugPayload",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_debug_payload",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealDebugPayload.java"
+        ]
+      },
+      "path": "~/Debug"
+    },
+    {
+      "name": "StageLadderPayload",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "stage_ladder_payload",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/StageLadderPayload.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "LivingEntityFlight",
+      "type": "mixin",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "living_entity_flight",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/mixin/LivingEntityFlightMixin.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "OrdealRootRender",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_root_render",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealRootRender.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "OrdealFlightLean",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_flight_lean",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealFlightLean.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "OrdealFlight",
+      "type": "mixin",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_flight",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/mixin/OrdealFlightMixin.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "ItemElytraHook",
+      "type": "mixin",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "item_elytra_hook",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/mixin/ItemElytraHookMixin.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "OrdealElytraOverride",
+      "type": "mixin",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_elytra_override",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/mixin/OrdealElytraOverrideMixin.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "OrdealFlightCamera",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_flight_camera",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/OrdealFlightCamera.java"
+        ]
+      },
+      "path": "~/Talents"
+    },
+    {
+      "name": "OrdealAnimPose",
+      "type": "mixin",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ordeal_anim_pose",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/mixin/OrdealAnimPoseMixin.java"
+        ]
+      },
+      "path": "~/Animator"
+    },
+    {
+      "name": "Panoply",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "panoply",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/Panoply.java"
+        ]
+      }
+    },
+    {
+      "name": "PanoplyPayload",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "panoply_payload",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/PanoplyPayload.java"
+        ]
+      }
+    },
+    {
+      "name": "PanoplyScreen",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "panoply_screen",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/PanoplyScreen.java"
+        ]
+      }
+    },
+    {
+      "name": "PanoplyHud",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "panoply_hud",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/PanoplyHud.java"
+        ]
+      }
+    },
+    {
+      "name": "PanoplyEquip",
+      "type": "keybind",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "panoply_equip",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/network/PanoplyEquipMessage.java"
+        ]
+      },
+      "path": "~/Keys"
+    },
+    {
+      "name": "PanoplyKeys",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "panoply_keys",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/PanoplyKeys.java"
+        ]
+      }
+    },
+    {
+      "name": "PanoplyPage",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "panoply_page",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/PanoplyPage.java"
+        ]
+      }
+    },
+    {
+      "name": "ItemInHandRenderer",
+      "type": "mixin",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "item_in_hand_renderer",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/mixin/ItemInHandRendererMixin.java"
+        ]
+      }
+    },
+    {
+      "name": "PlayerAnimationRenderer",
+      "type": "mixin",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "player_animation_renderer",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/mixin/PlayerAnimationRendererMixin.java"
+        ]
+      }
+    },
+    {
+      "name": "PanoplyAnchors",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "panoply_anchors",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/PanoplyAnchors.java"
+        ]
+      }
+    },
+    {
+      "name": "PanoplyLayer",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "panoply_layer",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/ordeal/PanoplyLayer.java"
         ]
       }
     }
@@ -1681,6 +3429,102 @@
       "type": "number",
       "scope": "player_lifetime",
       "value": "1.0"
+    },
+    {
+      "name": "chi_base",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "50.0"
+    },
+    {
+      "name": "talent1_Chi",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "talent2_Chi",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "talent1_chiBase",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "talent2_chiBase",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "talent1_ChiMax",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "talent2_ChiMax",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "talentState",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "1.0"
+    },
+    {
+      "name": "itemSwap",
+      "type": "itemstack",
+      "scope": "player_lifetime",
+      "value": "ItemStack.EMPTY"
+    },
+    {
+      "name": "beforeSwap",
+      "type": "itemstack",
+      "scope": "player_lifetime",
+      "value": "ItemStack.EMPTY"
+    },
+    {
+      "name": "FlightStyle",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": "default"
+    },
+    {
+      "name": "flightOn",
+      "type": "logic",
+      "scope": "player_lifetime",
+      "value": "false"
+    },
+    {
+      "name": "flightIdle",
+      "type": "logic",
+      "scope": "player_lifetime",
+      "value": "false"
+    },
+    {
+      "name": "flightBoost",
+      "type": "logic",
+      "scope": "player_lifetime",
+      "value": "false"
+    },
+    {
+      "name": "flightThrottle",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
+    },
+    {
+      "name": "flightSpeed",
+      "type": "number",
+      "scope": "player_lifetime",
+      "value": "0"
     }
   ],
   "sound_elements": [
@@ -1693,7 +3537,37 @@
       "subtitle": "gaurd_break"
     }
   ],
-  "tag_elements": {},
+  "tag_elements": {
+    "ITEMS:minecraft:swords": [
+      "~CUSTOM:IliosClaymore",
+      "~CUSTOM:Akonito",
+      "Items.WOODEN_SWORD",
+      "Items.STONE_SWORD",
+      "Items.IRON_SWORD",
+      "Items.GOLDEN_SWORD",
+      "Items.DIAMOND_SWORD",
+      "Items.NETHERITE_SWORD"
+    ],
+    "ITEMS:minecraft:greatsword": [
+      "CUSTOM:IliosClaymore"
+    ],
+    "ITEMS:mod:panoply": [
+      "Items.NETHERITE_SWORD"
+    ],
+    "ITEMS:mod:panoply/head": [],
+    "ITEMS:mod:panoply/hands": [],
+    "ITEMS:mod:panoply/shoulders": [],
+    "ITEMS:mod:panoply/waist": [
+      "Items.NETHERITE_SWORD"
+    ],
+    "ITEMS:mod:panoply/face": [],
+    "ITEMS:mod:panoply/legs": [],
+    "ITEMS:mod:panoply/back": [
+      "Items.NETHERITE_SWORD"
+    ],
+    "ITEMS:mod:panoply/feet": [],
+    "ITEMS:mod:talent_armor": []
+  },
   "tab_element_order": {},
   "language_map": {
     "en_us": {
@@ -1729,7 +3603,19 @@
       "effect.ordeal.phoenix_spear": "Phoenix Spear",
       "key.ordeal.ability_row_swap_key": "Combat Row Swap",
       "subtitles.gaurd_break": "gaurd_break",
-      "effect.ordeal.in_combat": "In Combat"
+      "effect.ordeal.in_combat": "In Combat",
+      "effect.ordeal.movement_stunned": "Stunned",
+      "effect.ordeal.descending_meteor": "Descending Meteor",
+      "effect.ordeal.trochos_armaton_forward": "Trochos Armaton Forward",
+      "effect.ordeal.back_dash": "Dash",
+      "effect.ordeal.trochos_armaton_back": "Trochos Armaton",
+      "effect.ordeal.neglet_fall_dmg": "Neglet Fall Dmg",
+      "item.ordeal.ilios_claymore": "Ilios Claymore",
+      "effect.ordeal.breathof_phoenix": "Breathof Phoenix",
+      "effect.ordeal.camera_lock_potion": "Camera Lock",
+      "item.ordeal.akontio": "Akontio",
+      "item.ordeal.fruit_of_pure_chi": "Fruit of Pure Chi",
+      "key.ordeal.panoply_equip": "Panoply Equip"
     }
   },
   "metadata": {
@@ -1739,27 +3625,51 @@
       "src/main/java/net/mcreator/ordeal/network/MenuStateUpdateMessage.java",
       "src/main/java/net/mcreator/ordeal/init/OrdealModKeyMappings.java",
       "src/main/java/net/mcreator/ordeal/init/OrdealModMobEffects.java",
-      "src/main/java/net/mcreator/ordeal/OrdealModPlayerAnimationAPI.java",
-      "src/main/resources/pack.mcmeta",
-      "src/main/java/net/mcreator/ordeal/client/ClientHelper.java",
+      "src/main/java/net/mcreator/ordeal/init/OrdealModItems.java",
+      "src/main/java/net/mcreator/ordeal/init/OrdealModEntityRenderers.java",
+      "src/main/java/net/mcreator/ordeal/init/OrdealModEntities.java",
+      "src/main/java/net/mcreator/ordeal/client/renderer/CustomEyeOfEnderRenderer.java",
+      "src/main/java/net/mcreator/ordeal/world/BlackHoleManager.java",
+      "src/main/java/net/mcreator/ordeal/math/CallCooldownManager.java",
+      "src/main/java/net/mcreator/ordeal/ai/OverrideMovementGoal.java",
       "src/main/java/net/mcreator/ordeal/network/NbtArrayLists.java",
-      "src/main/java/net/mcreator/ordeal/mixin/EntityRenderDispatcherMixin.java",
-      "src/main/java/net/mcreator/ordeal/network/OrdealModVariables.java",
-      "src/main/java/net/mcreator/ordeal/mixin/ItemInHandLayerMixin.java",
+      "src/main/java/net/mcreator/ordeal/client/renderer/SemiAquaticRenderer.java",
+      "src/main/java/net/mcreator/ordeal/world/PortalSavedData.java",
       "src/main/java/net/mcreator/ordeal/mixin/PlayerAnimationMixin.java",
+      "src/main/java/net/mcreator/ordeal/world/TeleportBlockHandler.java",
       "src/main/resources/assets/ordeal/sounds.json",
       "src/main/java/net/mcreator/ordeal/init/OrdealModSounds.java",
+      "src/main/java/net/mcreator/ordeal/network/NetworkRegister.java",
       "src/main/java/net/mcreator/ordeal/mixin/LevelRendererMixin.java",
-      "src/main/java/net/mcreator/ordeal/client/RenderUtils.java",
-      "src/main/resources/META-INF/neoforge.mods.toml",
+      "src/main/java/net/mcreator/ordeal/network/CameraShakePayload.java",
       "src/main/java/net/mcreator/ordeal/mixin/PlayerAnimationRendererMixin.java",
       "src/main/java/net/mcreator/ordeal/mixin/LivingEntityRendererMixin.java",
       "src/main/java/net/mcreator/ordeal/mixin/CameraAccessor.java",
       "src/main/java/net/mcreator/ordeal/OrdealMod.java",
+      "src/main/resources/META-INF/accesstransformer.cfg",
+      "src/main/java/net/mcreator/ordeal/ai/MoveToBlockGoal.java",
+      "src/main/java/net/mcreator/ordeal/network/PlayPlayerAnimationMessage.java",
+      "src/main/java/net/mcreator/ordeal/client/CameraShakeClientEvents.java",
+      "src/main/java/net/mcreator/ordeal/entity/CustomFireballEntity.java",
+      "src/main/java/net/mcreator/ordeal/world/BlockDamageHandler.java",
+      "src/main/java/net/mcreator/ordeal/ai/OrbitPositionGoal.java",
+      "src/main/java/net/mcreator/ordeal/entity/CustomEyeOfEnderEntity.java",
+      "src/main/java/net/mcreator/ordeal/OrdealModPlayerAnimationAPI.java",
+      "src/main/resources/pack.mcmeta",
+      "src/main/java/net/mcreator/ordeal/client/ClientHelper.java",
+      "src/main/java/net/mcreator/ordeal/mixin/EntityRenderDispatcherMixin.java",
+      "src/main/java/net/mcreator/ordeal/network/OrdealModVariables.java",
+      "src/main/java/net/mcreator/ordeal/mixin/ItemInHandLayerMixin.java",
+      "src/main/java/net/mcreator/ordeal/ai/MoveToStructureGoal.java",
+      "src/main/java/net/mcreator/ordeal/client/RenderUtils.java",
+      "src/main/java/net/mcreator/ordeal/client/CameraShakeManager.java",
+      "src/main/resources/META-INF/neoforge.mods.toml",
+      "src/main/java/net/mcreator/ordeal/client/renderer/CustomFireballRenderer.java",
       "src/main/java/net/mcreator/ordeal/mixin/ItemInHandRendererMixin.java",
       "src/main/resources/ordeal.mixins.json",
-      "src/main/resources/META-INF/accesstransformer.cfg",
-      "src/main/java/net/mcreator/ordeal/network/PlayPlayerAnimationMessage.java",
+      "src/main/java/net/mcreator/ordeal/math/CallCounter.java",
+      "src/main/java/net/mcreator/ordeal/world/BlackHoleSavedData.java",
+      "src/main/java/net/mcreator/ordeal/init/OrdealModTabs.java",
       "src/main/java/net/mcreator/ordeal/client/ItemArms.java"
     ]
   },
@@ -1799,19 +3709,16 @@
               },
               {
                 "name": "Trochos Armaton",
-                "children": []
-              },
-              {
-                "name": "Trochos Armaton Forward",
-                "children": []
-              },
-              {
-                "name": "Sun Spear",
-                "children": []
-              },
-              {
-                "name": "Chariot Wheel",
-                "children": []
+                "children": [
+                  {
+                    "name": "Forward",
+                    "children": []
+                  },
+                  {
+                    "name": "Backward",
+                    "children": []
+                  }
+                ]
               },
               {
                 "name": "Akonito",
@@ -1823,6 +3730,22 @@
               },
               {
                 "name": "Ilios State",
+                "children": []
+              },
+              {
+                "name": "Fire Breath",
+                "children": []
+              },
+              {
+                "name": "Claymore",
+                "children": []
+              },
+              {
+                "name": "Decimation Closing",
+                "children": []
+              },
+              {
+                "name": "Fire Infusion PASSIVE",
                 "children": []
               }
             ]
@@ -1913,6 +3836,10 @@
       },
       {
         "name": "Animator",
+        "children": []
+      },
+      {
+        "name": "Debug",
         "children": []
       }
     ]

@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:diamond_sword",
+    "minecraft:stone_sword",
+    "ordeal:ilios_claymore",
+    "minecraft:netherite_sword",
+    "ordeal:akontio",
+    "minecraft:wooden_sword",
+    "minecraft:golden_sword",
+    "minecraft:iron_sword"
+  ]
+}

@@ -47,15 +47,34 @@ public final class OrdealAnimPlayback {
 		 */
 		List<OrdealAnimData> loopFallback;
 		int fallbackLoops;
+
+		/**
+		 * The pose actually drawn, per bone, which chases the sampled pose
+		 * instead of being it. This is what makes idle -> flight a transition
+		 * rather than a jump: when a new clip starts, disp is still holding the
+		 * old clip's pose and eases into the new one over a few ticks.
+		 *
+		 * Invincible calls this disp/tgt with easeVisual(VISUAL_RATE) in
+		 * TpPlayback; same idea, per bone name instead of a fixed array.
+		 */
+		Map<String, OrdealAnimData.Pose> disp = new HashMap<>();
+		boolean primed;
 	}
+
+	/**
+	 * How fast the drawn pose chases the sampled one, per tick. 0.25 is roughly
+	 * a quarter-second cross-fade. 1.0 disables the easing entirely (snap).
+	 */
+	public static float VISUAL_RATE = 0.25f;
 
 	// ---- entry points -------------------------------------------------------
 
 	public static void play(Player p, String names, int loops, int blend) {
-		// first person runs on its own clock so it can cross-fade and hand back
-		// to a loop the way Invincible does - see OrdealFpPlayback
-		if (p.level().isClientSide() && isSelf(p))
-			OrdealFpPlayback.play(names, loops, blend);
+		// NOTE: this used to also fire OrdealFpPlayback for your own player, which
+		// pushed every THIRD-person clip into the FIRST-person rig as well. That is
+		// why a tp animation showed up in fp view. They are two systems with two
+		// commands on purpose - fp clips are played through OrdealFpPlayback by the
+		// fp command, and nothing here touches them.
 
 		List<OrdealAnimData> clips = new ArrayList<>();
 		for (String n : names.split(",")) {
@@ -101,10 +120,7 @@ public final class OrdealAnimPlayback {
 	}
 
 	public static void stop(Player p, String endClip, int blend) {
-		if (p.level().isClientSide() && isSelf(p)) {
-			if (endClip != null && !endClip.isEmpty()) OrdealFpPlayback.play(endClip, 1, blend);
-			else OrdealFpPlayback.stop();
-		}
+		// likewise: stopping a third-person clip must not stop the first-person rig
 		State s = STATES.get(p.getUUID());
 		if (s != null) { s.loopFallback = null; s.fallbackLoops = 0; }
 		if (endClip != null && !endClip.isEmpty() && clip(endClip) != null) {
@@ -121,12 +137,87 @@ public final class OrdealAnimPlayback {
 		return s != null && s.weight > 0.001f;
 	}
 
+
+	/**
+	 * True while the MCreator Player Animator plugin is driving this player (the
+	 * "play animation" block), so the Ordeal clip system yields the body.
+	 *
+	 * This is Invincible's TpPlayback.externalAnimActive, ported 1:1. Ordeal has
+	 * the same plugin (OrdealModPlayerAnimationAPI) and the same setupAnim mixin,
+	 * and without this yield BOTH systems write the same ModelParts in the same
+	 * frame - whichever mixin applies last wins, which is why a clip can look
+	 * like it plays sometimes and does nothing other times.
+	 *
+	 * Primary check is the NBT flag the plugin's broadcast packet sets on every
+	 * client before any mixin runs, so it is immune to mixin merge order. The
+	 * active map is the backup. The entry clears itself when the animation ends,
+	 * so this flips back false on its own and flight animation resumes.
+	 */
+	private static boolean externalAnimActive(Player p) {
+		try {
+			// ANY non-empty name means the plugin owns the body. No registry
+			// lookup: ability animations are namespaced ("ordeal:akonito_left")
+			// while the registry is keyed by bare name, so containsKey never
+			// matched and the yield never happened - which is why abilities did
+			// not override flight.
+			//
+			// The deadlock this guard was added for is fixed at the source
+			// instead: Flight no longer fires a plugin animation of its own, so
+			// nothing can leave a flag set for a clip that does not exist.
+			if (!p.getPersistentData().getString("PlayerCurrentAnimation").isEmpty())
+				return true;
+			return OrdealModPlayerAnimationAPI.active_animations.get(p) != null;
+		} catch (Throwable t) {
+			return false; // never block our own system
+		}
+	}
+
+	/**
+	 * True when a Player Animator clip is currently overriding our pose. The
+	 * flight driver reads this so an ability animation wins over the flight
+	 * loop, and the flight loop comes straight back when the ability finishes -
+	 * the clip never stopped, it was only yielded.
+	 */
+	public static boolean overriddenByPlugin(Player p) {
+		return externalAnimActive(p);
+	}
+
 	/** Blended pose for one bone, or null when nothing is playing. */
 	public static OrdealAnimData.Pose pose(Player p, String bone) {
+		if (externalAnimActive(p)) return null; // PlayerAnimator owns the body
 		State s = STATES.get(p.getUUID());
 		if (s == null || s.weight <= 0.001f || s.clips.isEmpty()) return null;
+		OrdealAnimData.Pose eased = s.disp.get(bone);
+		if (eased != null) return eased;
 		OrdealAnimData d = s.clips.get(Math.min(s.index, s.clips.size() - 1));
 		return d.sample(bone, s.time);
+	}
+
+	/**
+	 * Ease every bone's drawn pose toward this tick's sampled pose. Called once
+	 * per client tick from advance(), so the rate is per tick and does not
+	 * change with framerate.
+	 *
+	 * The first tick of the very first clip snaps into place rather than easing
+	 * up from nothing - fading IN is the weight's job, not this one's.
+	 */
+	private static void ease(State s) {
+		if (s.clips.isEmpty()) return;
+		OrdealAnimData d = s.clips.get(Math.min(s.index, s.clips.size() - 1));
+		float rate = s.primed ? Math.max(0.01f, Math.min(1f, VISUAL_RATE)) : 1f;
+		for (String bone : OrdealAnimData.BONES) {
+			OrdealAnimData.Pose want = d.sample(bone, s.time);
+			if (want == null) want = new OrdealAnimData.Pose();
+			OrdealAnimData.Pose cur = s.disp.get(bone);
+			if (cur == null) { cur = new OrdealAnimData.Pose(); s.disp.put(bone, cur); }
+			cur.rx += (want.rx - cur.rx) * rate;
+			cur.ry += (want.ry - cur.ry) * rate;
+			cur.rz += (want.rz - cur.rz) * rate;
+			cur.x  += (want.x  - cur.x)  * rate;
+			cur.y  += (want.y  - cur.y)  * rate;
+			cur.z  += (want.z  - cur.z)  * rate;
+		}
+		s.primed = true;
 	}
 
 	/** Living-motion level of whatever is playing on this player. */
@@ -144,6 +235,7 @@ public final class OrdealAnimPlayback {
 	}
 
 	public static float weight(Player p) {
+		if (externalAnimActive(p)) return 0f; // PlayerAnimator owns the body
 		State s = STATES.get(p.getUUID());
 		return s == null ? 0f : s.weight;
 	}
@@ -166,6 +258,8 @@ public final class OrdealAnimPlayback {
 	private static void advance(State s) {
 		if (s.clips.isEmpty()) { s.ending = true; s.weight = 0; return; }
 
+		ease(s); // chase the sampled pose - this is the clip-to-clip cross-fade
+
 		if (s.ending) {
 			s.weight = Math.max(0f, s.weight - (s.blend <= 0 ? 1f : 1f / s.blend));
 			return;
@@ -187,6 +281,12 @@ public final class OrdealAnimPlayback {
 		}
 		if (s.loops < 0 || d.loop) { s.time = 0; s.index = 0; return; }
 		if (s.loops > 1) { s.loops--; s.time = 0; s.index = 0; return; }
+
+		// HOLD LAST FRAME: park on the final pose and stay there. sample()
+		// already holds the last key past the end of the channel, so freezing
+		// the clock is all it takes. Nothing releases it but an explicit stop -
+		// that is the point of a stance.
+		if (d.holdLast) { s.time = len; return; }
 
 		// a one-shot over a loop hands back to the loop instead of ending
 		if (s.loopFallback != null && !s.loopFallback.isEmpty()) {
@@ -214,5 +314,6 @@ public final class OrdealAnimPlayback {
 	/** Drop the cache so the editor's saves are picked up without a restart. */
 	public static void invalidate() {
 		CACHE.clear();
+		OrdealAnimStore.forgetKinds();
 	}
 }

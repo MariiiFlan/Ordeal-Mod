@@ -1,6 +1,7 @@
 package net.mcreator.ordeal;
 
 import net.mcreator.ordeal.core.OrdealFx;
+import net.mcreator.ordeal.network.OrdealModVariables;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -38,12 +39,25 @@ public final class OrdealDash {
 	public static double VERTICAL        = OrdealTuning.d("dash.vertical", 1.0);
 	/** Lift given to a flat dash, so it clears a block instead of scraping it. */
 	public static double HOP             = OrdealTuning.d("dash.hop", 0.2);
+	/** Minimum gap between dashes, however many charges you are sitting on. */
+	public static int COOLDOWN_TICKS     = OrdealTuning.i("dash.cooldown_ticks", 20);
 	/** Photon effect played on every dash (make it in the ordeal fx project). */
 	public static final String FX = "ordeal:misc_chidash";
+
+	/** Server-side stamp of the last dash, so the cooldown survives a spammed client. */
+	private static final String CD_KEY = "ordeal_dash_cd";
 
 	// ---- server -------------------------------------------------------------
 
 	public static void execute(ServerPlayer p, String dir) {
+		// dashing is a combat move - out of the stance it does not exist
+		if (!p.getData(OrdealModVariables.PLAYER_VARIABLES).combatMode) return;
+
+		// the client holds its own copy of this, but the server decides
+		long now = p.level().getGameTime();
+		if (p.getPersistentData().getLong(CD_KEY) > now) return;
+		p.getPersistentData().putLong(CD_KEY, now + COOLDOWN_TICKS);
+
 		Vec3 look = p.getLookAngle();
 		Vec3 fwd = new Vec3(look.x, 0, look.z).normalize();
 		if (fwd.lengthSqr() < 1.0e-4) fwd = new Vec3(0, 0, 1);
@@ -83,6 +97,8 @@ public final class OrdealDash {
 
 		public static int charges = MAX_CHARGES;
 		private static int rechargeTicks = 0;
+		/** Client mirror of the server cooldown, so the bar cannot show a phantom spend. */
+		public static long readyAt = 0;
 		private static final boolean[] wasDown = new boolean[4];
 		private static final long[] lastTap = new long[4];
 		/** Taps banked on each key so far, cleared when the window lapses. */
@@ -107,6 +123,14 @@ public final class OrdealDash {
 				}
 			} else rechargeTicks = 0;
 
+			// same for leaving combat mode: a tap banked in the stance must not
+			// complete once you are out of it
+			if (!mc.player.getData(OrdealModVariables.PLAYER_VARIABLES).combatMode) {
+				java.util.Arrays.fill(taps, 0);
+				java.util.Arrays.fill(wasDown, false);
+				return;
+			}
+
 			// a screen eats the keys, so forget any half-finished attempt rather
 			// than letting it complete on the far side of a menu
 			if (mc.screen != null) {
@@ -129,7 +153,8 @@ public final class OrdealDash {
 					if (taps[i] >= need) {
 						taps[i] = 0;
 						lastTap[i] = -100;
-						if (charges > 0) {
+						if (charges > 0 && ticks >= readyAt) {
+							readyAt = ticks + COOLDOWN_TICKS;
 							charges--;
 							rechargeTicks = 0;
 							PacketDistributor.sendToServer(
